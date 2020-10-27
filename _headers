@@ -62,6 +62,15 @@
   Link: </component---node-modules-lekoarts-gatsby-theme-minimal-blog-core-src-templates-tags-query-tsx-f650cea0cd6d069a74d8.js>; rel=preload; as=script
   Link: </page-data/app-data.json>; rel=preload; as=fetch; crossorigin
   Link: </page-data/tags/page-data.json>; rel=preload; as=fetch; crossorigin
+/ut-invitational-2020
+  Link: </webpack-runtime-e4692c54ba59a2f1e575.js>; rel=preload; as=script
+  Link: </framework-9086242092609fce62cd.js>; rel=preload; as=script
+  Link: </app-c5d583453f2cd21ebe30.js>; rel=preload; as=script
+  Link: </styles-e9d24b1846c7d6eb9685.js>; rel=preload; as=script
+  Link: </e8a65c2ffc4f8972a6a131399a6f41da01e74740-132d26466202015b3ac6.js>; rel=preload; as=script
+  Link: </component---node-modules-lekoarts-gatsby-theme-minimal-blog-core-src-templates-post-query-tsx-10e90b2bf63d909efd13.js>; rel=preload; as=script
+  Link: </page-data/app-data.json>; rel=preload; as=fetch; crossorigin
+  Link: </page-data/ut-invitational-2020/page-data.json>; rel=preload; as=fetch; crossorigin
 /mit-invitational-2020
   Link: </webpack-runtime-e4692c54ba59a2f1e575.js>; rel=preload; as=script
   Link: </framework-9086242092609fce62cd.js>; rel=preload; as=script
