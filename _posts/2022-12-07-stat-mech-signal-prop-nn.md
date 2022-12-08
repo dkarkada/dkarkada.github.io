@@ -29,7 +29,7 @@ In the past decade, practitioners have provided evidence that deeper neural netw
 
 ## Field theory of neural networks
 
-In a trained neural network, we expect that two input vectors that are semantically similar (e.g. that both are images of cats) should be pushed towards each other as the input propagates through the network. In this sense, the role of a neural network is to extract semantic structure from the relevant data, which is typically some complicated suboldsymbolanifold in input space (i.e. a 'typical' random vector in image space is just noise; we only care about the manifold of 'natural' images).
+In a trained neural network, we expect that two input vectors that are semantically similar (e.g. that both are images of cats) should be pushed towards each other as the input propagates through the network. In this sense, the role of a neural network is to extract semantic structure from the relevant data, which is typically some complicated submanifold in input space (i.e. a 'typical' random vector in image space is just noise; we only care about the manifold of 'natural' images).
 
 Of course, the way an input is transformed through the network depends on the affine parameters. While the optimization algorithm provides the dynamical equation for the parameters, we must also specify the initial conditions. In practice, affine parameters are initialized i.i.d. Gaussian as
 
