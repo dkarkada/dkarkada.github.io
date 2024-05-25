@@ -1,14 +1,14 @@
-name: deploy
+name: deploy-old
 
-on:
-  push:
-    branches:
-      - master
-      - main
-  pull_request:
-    branches:
-      - master
-      - main
+# on:
+#   push:
+#     branches:
+#       - master
+#       - main
+#   pull_request:
+#     branches:
+#       - master
+#       - main
 
 jobs:
   deploy:
