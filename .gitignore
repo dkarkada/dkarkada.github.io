@@ -9,4 +9,4 @@ _site
 Gemfile.lock
 vendor
 
-_old website content
+_deployment_notes.md
