@@ -20,11 +20,12 @@ rm -f README.md
 # Now we init a new git repository inside _site
 # So we can perform a commit
 rm -fr .git
-git init
-git add .
+git config --global init.defaultBranch main
 git config --global user.name "Dhruva Karkada"
 git config --global user.email dkarkada@gmail.com
 # git remote set-url --add origin https://github.com/dkarkada/dkarkada.github.io.git
+git init
+git add .
 
 git commit -m "site compile - $(date)"
 echo "Build branch ready to go. Pushing to Github..."

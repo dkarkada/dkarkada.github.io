@@ -16,6 +16,8 @@ group :jekyll_plugins do
     gem 'mini_racer'
     gem 'unicode_utils'
     gem 'webrick'
+    gem "kramdown-parser-gfm"
+    gem 'google-protobuf'
     # gem "github-pages", "~> 231"
 end
 group :other_plugins do
