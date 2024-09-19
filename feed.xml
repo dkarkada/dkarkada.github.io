@@ -1,0 +1,657 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://dkarkada.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://dkarkada.github.io/" rel="alternate" type="text/html" hreflang="en" /><updated>2024-09-19T00:44:35-07:00</updated><id>https://dkarkada.github.io/feed.xml</id><title type="html">Dhruva’s Dumb Website</title><subtitle>Dhruva's Dumb Website
+</subtitle><entry><title type="html">How to take derivatives of matrix expressions</title><link href="https://dkarkada.github.io/blog/2024/derivative/" rel="alternate" type="text/html" title="How to take derivatives of matrix expressions" /><published>2024-09-19T00:00:00-07:00</published><updated>2024-09-19T00:00:00-07:00</updated><id>https://dkarkada.github.io/blog/2024/derivative</id><content type="html" xml:base="https://dkarkada.github.io/blog/2024/derivative/"><![CDATA[<p>I used to be really confused about how to take derivatives of (multi)linear algebra expressions with respect to vectors or matrices in those expressions. This kind of derivative is really common in machine learning. For example, consider the gradient descent update in linear regression. We need to compute the derivative of the square loss with respect to the weights:</p>
+
+\[\frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\vert\vert\mathbf{W}^T\mathbf{X}-\mathbf{Y}\vert\vert^2\right)\]
+
+<p>What’s the right way to do this? Is there a recipe that works for arbitrary tensor expressions? Although one can find the recipes for derivatives of common matrix expressions <a href="https://en.wikipedia.org/wiki/Matrix_calculus#Identities">online</a>, here I’ll explain a general systematic approach for calculating <em>any</em> tensor derivative, assuming no elementwise nonlinearities. At the end there’ll be <a href="#exercises">exercises</a> so you can practice :)</p>
+
+<p>The trick is to use Einstein index notation. If you don’t know what that is, read the <a href="#what-is-tensor-contraction">next section</a> and then come back here. Right now, I’ll just state the punchline.</p>
+
+<ol>
+  <li><strong>Write your tensor expression in Einstein notation.</strong> Here are the rules:
+    <ol>
+      <li>Vectors have upper indices, so \(\mathbf{x}=x^\mu\). Matrices have one upper and one lower index, with the upper index to the left of the lower, to indicate that the upper index contracts to the left and vice versa. (Think “upper index = row index” and “lower index = column index.”) For example, \(\mathbf{M}={M^\mu}_\nu\) and \(\mathbf{Mx}={M^\mu}_\nu x^\nu\).</li>
+      <li>A transpose switches the “up-ness” of all indices, so \(\mathbf{w}^T=w_\mu\) and \((\mathbf{AB})^T={A_\mu}^\nu{B_\nu}^\rho\). (Conveniently, if you’re careful about maintaining the left-right order of the indices on a given tensor, the order of the tensors themselves is irrelevant.<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>)</li>
+      <li>Repeated indices, one on top one on bottom, indicate contraction over an axis, so \(\mathbf{w}^T\mathbf{x}=w_\mu x^\mu\). Repeated indices, both on either top or bottom, indicate elementwise multiplication, and the index remains free, i.e., \(\mathbf{w}\odot\mathbf{x}=w^\mu x^\mu\).</li>
+      <li>A matrix trace is just a self-contraction, i.e. \(\mathrm{Tr}\,\mathbf{M}={M^\mu}_\mu\). There are no free indices, telling us that tracing yields a scalar.</li>
+      <li>Any Frobenius norm can be written \({\vert\vert\mathbf{M}\vert\vert}_F^2=\mathrm{Tr}[\mathbf{M}^T\mathbf{M}]\).</li>
+    </ol>
+  </li>
+  <li>
+    <p><strong>Differentiate.</strong> The derivative of a tensor with respect to itself just yields Kronecker deltas for each pair of corresponding indices, with the indices up or down exactly as you’d expect. For example:</p>
+
+\[\begin{align*}\mathrm{d}\mathbf{W}/\mathrm{d}\mathbf{W} &amp;= \mathrm{d}{W^\mu}_\nu/\mathrm{d}{W^\alpha}_\beta = \delta^\mu_\alpha \delta^\beta_\nu \newline \mathrm{d}(\mathbf{W}^T)/\mathrm{d}\mathbf{W} &amp;= \mathrm{d}{W_\mu}^\nu/\mathrm{d}{W^\alpha}_\beta = \delta_{\mu\alpha} \delta^{\nu\beta} \end{align*}\]
+
+    <p>where \(\delta\) is the Kronecker delta. Apart from this, use the differentiation rules from scalar calculus.<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup></p>
+  </li>
+  <li><strong>Contract away all the Kronecker deltas.</strong> If possible, convert your expression back to matrix notation.
+    <ol>
+      <li>Contracted indices are dummy indices, so their upness can be swapped at will. \(\mathbf{w}^T\mathbf{x}=w_\mu x^\mu=w^\mu x_\mu=\mathrm{Tr}[\mathbf{w}\mathbf{x}^T]=\mathbf{x}^T\mathbf{w}\)</li>
+      <li>In matrix notation we rely on matrix multiplication convention to tell us which indices contract. Indices that contract from lower left to upper right represent matrix multiplication. For example, we should reorder \({A_\mu}^\nu{B_\nu}^\rho \to {B_\nu}^\rho {A_\mu}^\nu\) so that \((\mathbf{AB})^T=\mathbf{B}^T\mathbf{A}^T\). In the special case that a scalar term contains a single pair of contracting indices that contract from upper left to lower right, we can write it as a trace, like the example above \(w^\mu x_\mu=\mathrm{Tr}[\mathbf{w}\mathbf{x}^T]\) or \({W^\nu}_\mu{U^\mu}_\nu=\mathrm{Tr}[\mathbf{W}\mathbf{U}]\).</li>
+      <li>If you have tensor expressions which can’t be written in terms of indices contracting from lower left to upper right (with the exception of scalars that can be written as a trace), it may not be possible to write it in matrix form. Einstein notation <em>generalizes</em> matrix notation.</li>
+    </ol>
+  </li>
+</ol>
+
+<h3 id="example">Example.</h3>
+
+<p>Let’s do the example above: differentiate</p>
+
+\[\frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\vert\vert\mathbf{W}^T\mathbf{X}-\mathbf{Y}\vert\vert^2\right).\]
+
+<p>I’ll spell out every step so it’s easy to follow along, but of course when you’re practiced it’ll take far less effort to compute the derivative. First, we convert to index notation:</p>
+
+\[\begin{align*}
+&amp;=\frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\mathrm{Tr}\left[(\mathbf{W}^T\mathbf{X}-\mathbf{Y})^T(\mathbf{W}^T\mathbf{X}-\mathbf{Y})\right]\right) \newline
+&amp;= \frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\mathrm{Tr}\left[
+\mathbf{X}^T\mathbf{W}\mathbf{W}^T\mathbf{X} - \mathbf{Y}^T\mathbf{W}^T\mathbf{X} - \mathbf{X}^T\mathbf{W}\mathbf{Y} + \mathbf{Y}^T\mathbf{Y}\right]\right) \newline
+&amp;= \frac{\mathrm{d}}{\mathrm{d}{W^\alpha}_\beta}\left(\frac{1}{2N}\left({X_\mu}^\nu{W^\mu}_\sigma{W_\gamma}^\sigma{X^\gamma}_\nu - {Y_\sigma}^\nu{W_\gamma}^\sigma{X^\gamma}_\nu - {X_\mu}^\nu{W^\mu}_\sigma{Y^\sigma}_\nu + {Y_\sigma}^\nu{Y^\sigma}_\nu\right)\right)
+\end{align*}\]
+
+<p>Then we differentiate and contract the Kronecker deltas:</p>
+
+\[\begin{align*}
+&amp;=\frac{1}{2N}\left({X_\mu}^\nu{\delta^\mu_\alpha}{\delta^\beta_\sigma}{W_\gamma}^\sigma{X^\gamma}_\nu + {X_\mu}^\nu{W^\mu}_\sigma{\delta_{\alpha\gamma}}{\delta^{\beta\sigma}}{X^\gamma}_\nu \newline
+- {Y_\sigma}^\nu{\delta_{\alpha\gamma}}{\delta^{\beta\sigma}}{X^\gamma}_\nu - {X_\mu}^\nu{\delta^\mu_\alpha}{\delta^\beta_\sigma}{Y^\sigma}_\nu + 0\right) \newline
+&amp;=\frac{1}{2N}\left({X_\alpha}^\nu{W_\gamma}^\beta{X^\gamma}_\nu + {X_\mu}^\nu{W^{\mu\beta}}{X_{\alpha\nu}} - {Y^{\beta\nu}}{X_{\alpha\nu}} - {X_\alpha}^\nu{Y^\beta}_\nu\right)
+\end{align*}\]
+
+<p>The contracted indices are dummy indices, and their “upness” can be swapped freely. So the first term is equal to the second, and same for the third and fourth. Then I’ll reorder the scalar factors in each term so that all the scalars so the indices contract from lower left to upper right, to make translation into matrix notation easy:</p>
+
+\[\begin{align*}
+&amp;=\frac{1}{N}\left({W_\gamma}^\beta{X^\gamma}_\nu{X_\alpha}^\nu - {Y^\beta}_\nu{X_\alpha}^\nu\right) \newline
+&amp;=\frac{1}{N}(\mathbf{W}^T\mathbf{X}-\mathbf{Y})\mathbf{X}^T
+\end{align*}\]
+
+<p>In retrospect, the answer is pretty intuitive — it looks like a direct application of the chain rule. You only need to check that the transposes are in the right places. It’s easy in this case because the square loss is simple. But it’s nice to have an unambiguous recipe for finding derivatives of arbitrary tensor expressions.</p>
+
+<h2 id="a-short-primer-on-tensor-contraction">A short primer on tensor contraction.</h2>
+
+<p>A <em>tensor</em> combines vectors from different vectors spaces and produces a scalar. The number of vectors a given tensor needs in order to produce a scalar is called the tensor’s <em>order</em>. For example, a scalar \(x\in\mathbb{R}\) is an order-zero tensor. A vector \(\mathbf{x}\in\mathbb{R}^n\) is an order-1 tensor: it combines with a single other vector to produce a scalar (via the dot product). A matrix \(\mathbf{M}\in\mathbb{R}^{m\times n}\) is an order-2 tensor, which takes two vectors \(\mathbf{x}\in\mathbb{R}^n\) and  \(\mathbf{y}\in\mathbb{R}^m\) and produces a scalar \(\mathbf{y}^T\mathbf{M}\mathbf{x}\). And so on for higher-order tensors.</p>
+
+<p>An order-\(n\) tensor can be written as a rectangular prism of numbers with \(n\) <em>axes</em>. Each axis acts on its own vector space. For example, a matrix \(\mathbf{M}\) has two axes (the columns and rows), and they act on the column space and row space respectively.<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup> The elements along a given axis are enumerated by an <em>index</em>. So, an order-\(n\) tensor will have \(n\) different indices.</p>
+
+<p>The process by which tensors combine with other tensors or vectors is called contraction. Beloved examples of contractions include the dot product, any matrix multiplication, and the trace. Tensor contraction is a binary operation that “fuses” two axes together by summing pairwise products over the shared axis. For example,</p>
+
+\[\mathbf{M}\mathbf{x}=\sum_j M_{ij}x_j\]
+
+<p>is a single contraction. It fuses the shared axes between \(\mathbf{x}\) and the row space of \(\mathbf{M}\). Since \(\mathbf{M}\) is an order-2 tensor, we need another contraction to get a scalar:</p>
+
+\[\mathbf{y}^T\mathbf{M}\mathbf{x}=\sum_i (y_i\sum_j M_{ij}x_j)\]
+
+<p>Tensors can only contract axes that share a vector space: if \(\mathbf{M}\in\mathbb{R}^{m\times n}\) and \(\mathbf{v}\in\mathbb{R}^k\), the contraction \(\mathbf{Mv}\) is undefined.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/contraction/contraction.gif-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/contraction/contraction.gif-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/contraction/contraction.gif-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/contraction/contraction.gif" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+
+<p>A contraction is a structure-reducing operation. I imagine that it’s called “contraction” because it collapses large and unwieldy tensors towards structureless scalars. Because of their linearity, contractions are easily parallelizable, which is what gives modern GPUs a decisive computational advantage in computing tensor expressions.</p>
+
+<p>The insight of Einstein notation is that contraction is such a common operation that we should save ourselves the pain of writing out all the summation signs. We can <em>infer</em> a sum when indices are repeated. This is the same notation used in np.einsum and torch.einsum.</p>
+
+\[\mathbf{M}\mathbf{x}=\sum_j M_{ij}x_j={M^\mu}_\nu x^\nu\]
+
+<p>The other ingredient is that we distinguish two <em>types</em> of axes, which we denote by either upper or lower indices. This is equivalent to the distinction we make in matrix algebra between column vectors and row vectors (which we usually denoted with a transpose). In differential geometric terms, this is the distinction between contravariant and covariant vectors. Here are two key points to remember about this:</p>
+
+<ol>
+  <li>It’s important that contractions happen between a lower index and an upper index. After all, we write dot products as \(\mathbf{a}^T\mathbf{b}\) and not as \(\mathbf{a}\mathbf{b}\). This is consistent with the fact that the vector transpose (a.k.a. covector) is a linear functional: it contracts with vectors to produce scalars.</li>
+  <li>The derivative w.r.t. a contravariant tensor is covariant, and vice versa. I remember this by thinking about a typical Taylor expansion, where derivatives contract directly with displacements: \(f(\mathbf{x}+d\mathbf{x}) \approx f(\mathbf{x}) + \nabla f(\mathbf{x})d\mathbf{x} + \cdots\). Since \(d\mathbf{x}\) and \(\mathbf{x}\) are tensors of the same type, \(\nabla_\mathbf{x}\) must contract with \(\mathbf{x}\), implying that the indices in the derivative are all flipped.</li>
+</ol>
+
+<h2 id="exercises">Exercises.</h2>
+
+<ol>
+  <li>Write these in Einstein notation. Then take the derivative with respect to \(\mathbf{x}\). Also take the derivative with respect to \(\mathbf{W}\) if present.
+    <ol>
+      <li>An outer product, \(\mathbf{x}\mathbf{x}^T\)</li>
+      <li>A shallow linear network with vector input and scalar output, \(\mathbf{u}^T\mathbf{Wx}\)</li>
+      <li>A deep linear network with vector input/output, \(\mathbf{f}(\mathbf{x};\mathbf{U,W,V})=\mathbf{UWVx}\)</li>
+      <li>A scalar quadratic model, \(f(\mathbf{x};a,\mathbf{v},\mathbf{W}) = a + \mathbf{v}^T\mathbf{x}+\frac{1}{2}\mathbf{x}^T \mathbf{W} \mathbf{x}\)</li>
+      <li>\(\mathrm{diag}(\mathbf{v})\mathbf{x}\), where \(\mathrm{diag}(\mathbf{v})\in\mathbb{R}^{n\times n}\) is the diagonal matrix with \(\mathbf{v}\in\mathbb{R}^n\) on the diagonal.</li>
+      <li>The linear Barlow Twins loss for self-supervised learning, \(\frac{1}{2}\vert\vert\sum_i^N\mathbf{Wx}_i(\mathbf{Wx}_i)^T-\mathbb{I}\vert\vert^2\)</li>
+    </ol>
+  </li>
+  <li>Demonstrate the cyclic trace property, e.g., \(\mathrm{Tr}(\mathbf{ABC})=\mathrm{Tr}(\mathbf{BCA})=\mathrm{Tr}(\mathbf{CAB})\), given the rules regarding Einstein summation. Extend the argument to a matrix product of any length. Show why arbitrary permutations within the matrix product aren’t allowed.</li>
+  <li>Consider input with spatial and channel axes (shape \(S\times C\)). A Conv1D layer (with no bias) convolves the spatial axis with \(C'\) small filter stacks, each of height \(C\). This produces a feature map of shape \(S'\times C'\).
+    <ol>
+      <li>Write the 1D convolution operator in einstein notation. Hint: it’s helpful to define a “patchify” operator, which is a linear tensor operator.</li>
+      <li>Take the derivative of the feature map w.r.t. one of the filters.</li>
+    </ol>
+  </li>
+</ol>
+
+<h3 id="footnotes">Footnotes</h3>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>This is because a tensor product written in index notation is really a sum of scalar products, and scalars commute. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p>Remember to use different indices in the variable of differentiation from those in the expression; there’s no contraction between the variable of differentiation and your expression. <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p>Unfortunately, the nomenclature is pretty muddy. The term “axis” is used in math to refer to a particular direction in a vector space — that’s very different from an axis of a tensor. What’s worse, the “size” of a tensor axis is the dimension of the vector space that axis acts on, but pytorch uses “dimensions” to refer to the axes themselves. This ambiguity is avoided in numpy, which uses the kwarg “axis” to refer to an axis. Both numpy and pytorch use attribute “shape” to refer to the sizes of each axis (i.e., the geometric dimension of each corresponding vector space). <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>]]></content><author><name></name></author><category term="science" /><summary type="html"><![CDATA[Matrix differentiation doesn't have to be painful.]]></summary></entry><entry><title type="html">Quick n dirty derivation of Larmor radiation and gravitational waves</title><link href="https://dkarkada.github.io/blog/2024/larmor/" rel="alternate" type="text/html" title="Quick n dirty derivation of Larmor radiation and gravitational waves" /><published>2024-08-31T00:00:00-07:00</published><updated>2024-08-31T00:00:00-07:00</updated><id>https://dkarkada.github.io/blog/2024/larmor</id><content type="html" xml:base="https://dkarkada.github.io/blog/2024/larmor/"><![CDATA[<p>In this blog post, I’ll give back-of-the-envelope derivations for the power radiated by electric dipoles (Larmor radiation) and orbiting black holes (gravitational waves). We’ll also be able to see very plainly that the power emitted by a black hole binary right before it merges is independent of the black hole masses: black-hole mergers are standard sirens.</p>
+
+<p>Let’s focus on the electromagnetic case first. The energy density of the field is something like \(\varepsilon\sim E^2/k\) where \(k\) is the Coulomb constant and \(E\) is the electric field. (This comes from Poynting’s theorem.) I’ve dropped factors like \(4\pi\) because they are annoying and I don’t care about them.</p>
+
+<p>Charge is conserved. Let’s for a moment pretend it’s not. Like a syringe squeezing a big water droplet onto a penny, let’s imagine procuring a charge \(q\) at some point in space over the course of some time interval \(\Delta t\). Where there was once no electric field, there are now field lines emanating from the charge. Information about the procurement of the charge propagates outwards at light speed \(c\), so the electric field lines fill a “bubble” of radius \(c\Delta t\).  The average field strength in this bubble is something like \(E\sim kq/(c\Delta t)^2\). The energy inside the bubble is then \(U\sim (E^2/k)(c\Delta t)^3=k q^2/(c\Delta t)\) which checks out dimensionally.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/larmor/electron.gif-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/larmor/electron.gif-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/larmor/electron.gif-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/larmor/electron.gif" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+
+<p>Now let’s imagine slowly disappearing the charge and repeating this cycle over and over. We now have a characteristic timescale: the reciprocal of the oscillation frequency, \(\Delta t\sim \omega^{-1}\). The power (energy per unit time) emitted by this electric monopole is then</p>
+
+\[P_\mathrm{monopole}\sim k q^2c^{-1}\omega^2.\]
+
+<p>But this is so silly. We can’t simply procure charge — charge is conserved. What we CAN do is mask a positive charge with a negative charge, to effectively make it disappear. By oscillating these two charges against each other, we get an oscillating dipole moment without violating charge conservation. Just as before, the energy of the radiation goes like the field strength squared. But now we have to keep track of the field produced by <em>both</em> charges, which interfere with each other. This interference makes the dipole field much weaker than the monopole field.  How much weaker? To calculate this interference correction, we’ll use a heuristic argument: far enough from the dipole, the radiation should look like the sum of two opposite monopole waves, displaced from each other by the dipole separation \(d\). (Challenge: can you argue why? Remember that, in the far field, the field configuration only depends on the dipole moment \(\mu(t)=q(t)d(t)\).) Here’s an animation<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup> depicting this:</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/larmor/dipole.gif-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/larmor/dipole.gif-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/larmor/dipole.gif-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/larmor/dipole.gif" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+
+<p>The spatial part of the superposed monopole waves goes like</p>
+
+\[e^{-i\omega x/c}-e^{-i\omega(x+d)/c}=e^{-i\omega x/c}(1-e^{-i\omega d/c})\approx e^{-i\omega x/c}(1-1+i\omega d/c)= i(\omega d/c) e^{-i\omega x/c}\]
+
+<p>where I used the dispersion relation for light \(2\pi/\lambda=\omega/c\). I also used a Taylor expansion since I’m assuming that \(d\) is much smaller than the wavelength. The energy in a wave goes like the amplitude squared, which tells us that the power radiated by a dipole is damped by a factor of \((\omega d/c)^2\) compared to the power from the winking monopole, due to interference. This is the last ingredient we need to get the power radiated by an electric dipole:</p>
+
+\[P_\mathrm{dipole}\sim (\omega d/c)^2 P_\mathrm{monopole} = k (qd)^2 \omega^4 c^{-3}\]
+
+<p>Compare this to the exact answer given by Larmor’s formula:</p>
+
+\[P_\mathrm{Larmor}=\frac{1}{3} k (qd)^2 \omega^4 c^{-3}\]
+
+<p>Our stupid hacky derivation gets all the scaling right — we only miss the order-unity numerical factor.</p>
+
+<p>Great news: we can apply the same analysis to gravitational waves, if we’re willing to make some extra logical jumps. The proportionality constant is now \(G\) and the charges are now masses. The oscillation frequency is no longer a free parameter; it’s fixed by mechanics<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">2</a></sup> as \(\omega^2 = 2Gmd^{-3}\). It turns out that the energy density in the gravitational field is analogous to that of the electric field, in that it goes like the squared field strength.<sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">3</a></sup> The most important difference, though, is that not only is mass conserved (no monopole radiation), mass is also strictly non-negative. So, by symmetry, there can be no dipole moment. Gravitational radiation is in fact quadrupole radiation, which suffers an <em>extra</em> interference damping factor. So, modifying the same equation as before, the power in gravitational waves is</p>
+
+\[P_\mathrm{quad}\sim (\omega d/c)^4 Gm^2c^{-1}\omega^2 = G^4m^5 d^{-5}c^{-5}\]
+
+<p>Compare with the true formula:</p>
+
+\[P_\mathrm{grav} = \frac{64}{5}G^4m^5 d^{-5}c^{-5}\]
+
+<p>Again we’re off by some numerical factor but the scaling is all correct.</p>
+
+<p>The power emitted from a merging black hole binary is independent of the masses. This is because they coalesce roughly when their event horizons overlap, i.e., \(d\sim R_\text{Schwarzschild}=2Gm/c^2\). Plugging this in, we get</p>
+
+\[P_\text{merger} \sim c^5 G^{-1}\]
+
+<p>which is a truly insane amount of power – in the ballpark of \(10^{50}\) Watts, more than the combined luminosity of all the stars in the universe. Since the power emitted depends only on universal constants, black hole mergers are “standard sirens” – we can exploit the inverse-square law to determine the distance to the merger. Here’s a cool animation.<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">4</a></sup></p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/larmor/gravwave.gif-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/larmor/gravwave.gif-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/larmor/gravwave.gif-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/larmor/gravwave.gif" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+
+<p>Much of this derivation was taught to me by Eugene Chiang, and I thought it was a really cool and easy way to re-derive some radiation formulas.</p>
+
+<h3 id="footnotes">Footnotes</h3>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p><a href="https://www.en.didaktik.physik.uni-muenchen.de/multimedia/dipolstrahlung/animated-gifs-aus-bildern/index.html">Inlay animation</a> <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p>I’m assuming here that the masses are equal for simplicity; breaking this assumption just introduces numerical factors, which I already said I don’t care about. <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p>It’s probably because they’re both inverse-square laws, but I’m not sure tbh. <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p><a href="https://www.ligo.caltech.edu/video/ligo20160615v1">Gravitational wave animation</a> <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>]]></content><author><name></name></author><category term="science" /><summary type="html"><![CDATA[It's not so hard to derive order-of-magnitude expressions for radiation formulas]]></summary></entry><entry><title type="html">Statistical physics of signal propagation in deep neural networks</title><link href="https://dkarkada.github.io/blog/2022/stat-mech-signal-prop-nn/" rel="alternate" type="text/html" title="Statistical physics of signal propagation in deep neural networks" /><published>2022-12-07T00:00:00-08:00</published><updated>2022-12-07T00:00:00-08:00</updated><id>https://dkarkada.github.io/blog/2022/stat-mech-signal-prop-nn</id><content type="html" xml:base="https://dkarkada.github.io/blog/2022/stat-mech-signal-prop-nn/"><![CDATA[\[\newcommand{\E}[1]{\left\langle#1\right\rangle}\]
+
+<p>Here I’ve summarized some of the main ideas that underlie the theory of signal propagation in deep neural networks. This theory, which is strongly inspired by the physics of statistical field theory, explains the success of ReLU as an activation function for deep networks and also predicts that the Kaiming initialization scheme is optimal. I wrote this as a final report for a course on critical phenomena in equilibrium and nonequilibrium systems. I hope it’s informative!</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>In machine learning, we are interested in learning patterns in data. In regression problems, we focus on learning a function that uses data (e.g. a digital image) to predict properties of the data (e.g. whether the image contains a cat). To do this, we use a general-purpose function approximator: a neural network. A neural network (NN) parameterizes a family of functions by stacking <em>layers</em> of interleaved affine transformations and element-wise nonlinear transformations. For example,</p>
+
+\[f(\vec{x}) = \boldsymbol{A}^{(L)} \phi \boldsymbol{A}^{(L-1)}\phi\dots \phi \boldsymbol{A}^{(1)} \vec{x}\]
+
+<p>where \(f(\vec{x})\) is the NN output on input \(\vec{x}\) and the \(\boldsymbol{A}^{(\ell)}\) are affine transformations each defined by tunable (i.e. trainable) parameters. The index \(\ell\) enumerates the layers, \(L\) is the <em>depth</em> of the neural network, and \(\phi(x_i)\) is a nonlinear scalar function which acts element-wise on a vector. Choosing \(L\) and \(\phi\) is a design decision made a priori. When we train this NN, we tune its affine parameters to search the family of functions for a specific function that well-approximates the true pattern in the data. Training is computationally expensive, so we would like to use theoretical principles to guide design decisions and maximize performance.</p>
+
+<p>Unfortunately, we lack a complete theory that predicts the final performance of a given NN before actually training it. The fundamental difficulty is that neural networks may have billions of parameters whose training dynamics are coupled. This justifies using tools from statistical physics to uncover the basic behaviors and properties of these large-scale systems. In fact, mean field theory, partition functions, replica calculations, phase transitions, and more have become standard in NN theory, reflecting a long history of contributions from statistical physicists to NN theory (<a href="https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745">Bahri et al. 2020</a>).</p>
+
+<p>In the past decade, practitioners have provided evidence that deeper neural networks a) perform better, but b) are more challenging to optimize. Subsequent work empirically found that a particular choice of \(\phi\) known as ReLU helped alleviate the optimization challenge of deep neural networks (<a href="https://arxiv.org/abs/1502.01852">He et al. 2015</a>). All of these observations lacked theoretical explanations for many years. In this report, I will summarize recent results that use statistical field theory to convincingly explain these phenomena.</p>
+
+<h2 id="field-theory-of-neural-networks">Field theory of neural networks</h2>
+
+<p>In a trained neural network, we expect that two input vectors that are semantically similar (e.g. that both are images of cats) should be pushed towards each other as the input propagates through the network. In this sense, the role of a neural network is to extract semantic structure from the relevant data, which is typically some complicated submanifold in input space (i.e. a ‘typical’ random vector in image space is just noise; we only care about the manifold of ‘natural’ images).</p>
+
+<p>Of course, the way an input is transformed through the network depends on the affine parameters. While the optimization algorithm provides the dynamical equation for the parameters, we must also specify the initial conditions. In practice, affine parameters are initialized i.i.d. Gaussian as</p>
+
+\[W^{(\ell)}_{ij}\sim \mathcal{N}(0, \sigma_w^2/N) \quad\mathrm{and}\quad b^{(\ell)}_i \sim \mathcal{N}(0, \sigma_b^2)\]
+
+<p>where \(\boldsymbol{A}^{(\ell)}(\vec{v})=\boldsymbol{W}^{(\ell)}\vec{v}+\vec{b}^{(\ell)}\) and \(N\) is the dimension of the affine input. The parameter variances \(\sigma_b^2\) and \(\sigma_w^2\) must be chosen carefully a priori; <a href="https://arxiv.org/abs/1502.01852">He et al. (2015)</a> suggest choosing \(\sigma_w^2=2\), which is now standard due to its empirical success. Now, as in statistical physics, we study the resulting ensemble of neural networks. In particular, we characterize a neural network’s manipulation of the data manifold by studying the inner product between two arbitrary inputs as they are processed layer-by-layer:</p>
+
+\[G_{i}^{(\ell)}(\vec{x}, \vec{x}') := \E{z_i^{(\ell)}(\vec{x}) z_i^{(\ell)}(\vec{x}')}\]
+
+<p>where \(\vec{z}^{(\ell)}(x)\) is the output<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup> of layer \(\ell\) on input \(x\), and \(i\) is a vector component index (dropped later for clarity). The expectation is over the network ensemble. The quantity \(G\) characterizes the changing geometry of the data manifold as it propagates through the network ensemble.</p>
+
+<p>Note that \(G\) is precisely the two-point correlator of layer outputs (<a href="https://doi.org/10.1017/CBO9780511815881">Kardar 2007</a>). So, we can restate our goal as characterizing the correlator’s flow from layer to layer. If we want neural networks to preserve important structural information about the input as it flows to deep layers, then we must ensure that the correlator is flow-invariant: in other words, we need to initialize the NN at criticality, so that \(G^{(\ell)}\sim G^{(0)}\) for all \(\ell\). A very deep network initialized far from criticality will yield outputs uncorrelated to the input, and the optimization algorithm will therefore fail (<a href="https://arxiv.org/abs/1611.01232">Schoenholz et al. 2016</a>).</p>
+
+<p>However, a major challenge remains. Although the first-layer “field” \(z_i^{(1)}\) is Gaussian-distributed, as \(z_i^{(\ell)}\) flows along increasing \(\ell\), its ensemble distribution increasingly deviates from Gaussianity<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>. This makes theoretical analysis intractable (<a href="https://arxiv.org/abs/2106.10165">Roberts, Yaida, and Hanin 2022</a>). To circumvent this, we take the “infinite-width limit”: we take the dimension of the codomains of all \(\boldsymbol{A}^{(\ell&lt;L)}\) to infinity, so that all the \(\vec{z}^{(\ell&lt;L)}\) are infinite-dimensional. It turns out that ensemble fluctuations of the correlator vanish in this limit. In this mean-field limit, the output fields \(z_i^{(\ell)}\) are zero-mean Gaussian random fields and are thus fully characterized by the correlator \(G^{(\ell)}\).</p>
+
+<p>This field-theoretic framework allows us to theoretically compute the correlator for a variety of choices of \(\phi\), provides a criterion for criticality, and relates these to the geometry of the data manifold and the trainability of the NN.</p>
+
+<h2 id="criticality-analysis">Criticality analysis</h2>
+
+<p>For a NN to be initialized at criticality, we need the correlator to approach a nontrivial fixed point \(\lim_{\ell\to\infty}G^{(\ell)}=G^*\). This will depend on the choice of the nonlinearity \(\phi\) as well as the initial parameter variances \(\sigma_b^2\) and \(\sigma_w^2\). In the infinite-width (mean-field) limit, we obtain the recursive flow relation</p>
+
+\[G^{(\ell+1)}(\vec{x}_+, \vec{x}_-) =\sigma_b^2 + \sigma_w^2\E{\phi(z_+^{(\ell)}) \phi(z_-^{(\ell)})}\]
+
+<p>where the expectation is tractable in the mean-field limit since it depends only on \(G^{(\ell)}\).</p>
+
+<p><a href="https://arxiv.org/abs/2106.10165">Roberts, Yaida, and Hanin (2022)</a> use perturbative techniques to compute the fixed point \(G^*\) for nonlinearities obeying \(\phi(\lambda x)=\lambda\phi(x)\), which include the ubiquitous \(\mathrm{ReLU}(x)=\max(0,x)\). By linearizing the flow equation around the degenerate limit where both inputs coincide identically, i.e. \(x_\pm = x_0\pm\frac{1}{2}\delta x\), they find a flow in the correlator perturbation, which can be solved to low order in the perturbation. For \(\mathrm{ReLU}\):</p>
+
+\[(G+\delta G)^{(\ell+1)} = \sigma_b^2+\frac{1}{2}\sigma_w^2(G+\delta G)^{(\ell)}\]
+
+<p>which has a fixed point at \((\sigma_b^2, \sigma_w^2)=(0, 2)\). The theory also predicts a semi-critical fixed line at \(\sigma_b^2&gt;0\) and \(\sigma_w^2=2\), where the total correlator increases linearly but the correlator perturbations are at a fixed point. If the NN is initialized on a (semi)critical point, information about the geometric structure of the data can propagate through arbitrarily deep networks without exponentially vanishing or blowing up. As a result, these initialization schemes greatly enhance the trainability of very deep networks, which is exactly what is observed in practice:</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0" max-width="500px">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/statphys-nn-phasediagram-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/statphys-nn-phasediagram-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/statphys-nn-phasediagram-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/statphys-nn-phasediagram.png" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+<div class="caption">
+    Post-training performance on the MNIST dataset for ReLU networks, as a function of hyperparameters. As depth increases, criticality increasingly determines trainability, and the semicritical phase boundary becomes apparent. Figure adapted from Lee et al. 2017.
+</div>
+
+<p>We can use this formalism to repeat this calculation for other choices of nonlinearity \(\phi\). The result is that there exists a broad class of \(\phi\) which do not permit a fixed point. Deep networks with these nonlinearities are not trainable. The takeaway is that the theory predicts both the unique success of \(\mathrm{ReLU}\) as well as the Kaiming initialization scheme (\(\sigma^2_w=2\)) which is  widely used in practice.</p>
+
+<h2 id="future-directions">Future directions</h2>
+
+<p>Do NNs far from the mean-field limit behave qualitatively differently? Can the field theory framework handle task-specific NN architectures where the affine transforms may have additional structure? Can we go beyond initialization and make quantitative, data-dependent predictions about training dynamics? The field theory formalism presented here is one of many frameworks used to approach the slew of open questions remaining in NN theory. Rapid engineering improvements only deepen the gap between theory and practice; it will take a coherent synthesis of varying perspectives to develop a complete theory of deep learning.</p>
+
+<h2 id="references">References</h2>
+
+<ol>
+  <li><a href="https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745">Bahri, Yasaman et al. (2020). “Statistical mechanics of deep learning”. In: <em>Annual Review of Condensed Matter Physics</em> 11.1.</a></li>
+  <li><a href="https://arxiv.org/abs/1502.01852">He, Kaiming et al. (2015). “Delving deep into rectifiers: Surpassing human-level performance on imagenet classification”. In: <em>Proceedings of the IEEE international conference on computer vision</em>, pp. 1026–1034.</a></li>
+  <li><a href="https://doi.org/10.1017/CBO9780511815881">Kardar, Mehran (2007). <em>Statistical physics of fields</em>. Cambridge University Press.</a></li>
+  <li><a href="https://arxiv.org/abs/1611.01232">Schoenholz, Samuel S et al. (2016). “Deep information propagation”. In: <em>arXiv preprint arXiv:1611.01232</em>.</a></li>
+  <li><a href="https://arxiv.org/abs/2106.10165">Roberts, Daniel A, Sho Yaida, and Boris Hanin (2022). <em>The Principles of Deep Learning Theory: An Effective Theory Approach to Understanding Neural Networks</em>. Cambridge University Press.</a></li>
+  <li><a href="https://arxiv.org/abs/1711.00165">Lee, Jaehoon et al. (2017). “Deep neural networks as gaussian processes”. In: <em>arXiv preprint arXiv:1711.00165</em>.</a></li>
+</ol>
+
+<h3 id="footnotes">Footnotes</h3>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>This is the output just before the nonlinearity is applied. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p>The non-Gaussianity originates from “interactions” between field components that breaks their statistical independence. <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>]]></content><author><name></name></author><category term="science" /><summary type="html"><![CDATA[Using statistical physics to understand what makes a good activation function]]></summary></entry><entry><title type="html">Automatically detecting and tracking structures in protostellar outflows</title><link href="https://dkarkada.github.io/blog/2021/thesis/" rel="alternate" type="text/html" title="Automatically detecting and tracking structures in protostellar outflows" /><published>2021-06-06T00:00:00-07:00</published><updated>2021-06-06T00:00:00-07:00</updated><id>https://dkarkada.github.io/blog/2021/thesis</id><content type="html" xml:base="https://dkarkada.github.io/blog/2021/thesis/"><![CDATA[<p>My senior thesis recently was announced as the runner-up for the Best Honors Thesis award for the computer science department! This was work conducted with Prof. Stella Offner, who studies star formation. Stella was my primary research for most of my undergraduate research career. I’ve learned a lot by working with her, and I can’t thank her enough!</p>
+
+<p>My thesis describes a new algorithm I developed for automatically tracking gas substructures in protostellar outflows. When a star is forming, it accretes gas from its environment; this accretion typically occurs on an equatorial disk (due to the conserved angular momentum of the system and dissipative forces within the gas). Due to magnetic effects, this accretion produces <em>outflows</em> which are uneven jets of gas that are ejected from the protostar’s poles. These outflows are typically emitted in discrete <em>bullets</em>, which feed back into the stellar environment and have downstream feedback effects for the accretion processes. In particular, these feedback processes effect the final mass of the star, which in turn determines all other stellar properties of interest.</p>
+
+<p>On the left is a video showing these polar outflows in a simulation of a protostellar region. On the right are the results of my algorithm, tracking these separate outflow structures through time and accounting for bullets merging.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/outflow-sim.gif-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/outflow-sim.gif-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/outflow-sim.gif-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/outflow-sim.gif" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/outflow-track.gif-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/outflow-track.gif-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/outflow-track.gif-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/outflow-track.gif" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+
+<p>My goal was to develop an algorithm that can automatically detect and quantify the bullets you see in the video. Unfortunately, unsupervised multi-target tracking algorithms do not exist. In addition, even the supervised trajectory-finding algorithms often use discrete optimization, which makes it difficult to apply the laws of physics. I developed a <em>continuous</em> optimization technique which enforces momentum conservation and mass conservation to automatically track these outflows. You can read more about it in my thesis <a href="/assets/pdf/undergrad-thesis.pdf">here</a>.</p>]]></content><author><name></name></author><category term="science" /><summary type="html"><![CDATA[My senior thesis won an award]]></summary></entry><entry><title type="html">Science Olympiad resources</title><link href="https://dkarkada.github.io/blog/2020/scioly-resources/" rel="alternate" type="text/html" title="Science Olympiad resources" /><published>2020-01-25T00:00:00-08:00</published><updated>2020-01-25T00:00:00-08:00</updated><id>https://dkarkada.github.io/blog/2020/scioly-resources</id><content type="html" xml:base="https://dkarkada.github.io/blog/2020/scioly-resources/"><![CDATA[<h3 id="mit-invitational-jan-2020">MIT Invitational Jan 2020</h3>
+
+<p>Here are the exam materials for the Astronomy C exam, which was written by Asher Noel, Antonio Frigo, <a href="https://somewhatoverwhelmed.wordpress.com/">Aditya Shah</a>, and me. Teams performed about as expected with this difficult exam, with the mean score being 42 (out of 118) with a standard deviation of 18. Teams did pretty well on the multiple choice questions (mean score 27.5/40), but found the free response far less accessible (mean scores 5.5/30 and 9/48 for sections B and C respectively).</p>
+
+<p>This exam was pretty challenging, but I’m glad that teams were able to rise to it. The co-ES’s and I struggled to find the proper balance in writing an exam that was challenging for top teams but not wholly discouraging for newer competitors. This is the result: an exam with a fairly straightforward section A, a challenging section B, and a much more difficult section C. Most teams attempted the JS9 questions, and many teams got credit. Hopefully this question offers more practice material. We emphasized cosmology pretty heavily in this exam – understanding dark energy (lambda), cosmic microwave background, early structure formation, and how the expansion of the universe (i.e. scale factor) affects those.Unfortunately, there aren’t many good online resources for cosmology, making it tricky to learn. Hopefully this exam gives a good starting point. For the dedicated learner, Ryden’s <em>Introduction to Cosmology</em> is the standard undergraduate text, but that’s probably overkill for scioly purposes. I’d recommend starting on Wikipedia’s article on <a href="https://en.wikipedia.org/wiki/Physical_cosmology">physical cosmology</a> and seeing where that takes you.</p>
+
+<ul>
+  <li><a href="/assets/pdf/scioly/mit20-astro-exam.pdf">Exam</a></li>
+  <li><a href="/assets/pdf/scioly/mit20-image-sheet.pdf">Image Sheet</a></li>
+  <li><a href="/assets/pdf/scioly/mit20-lens.fits">FITS file</a></li>
+  <li><a href="/assets/pdf/scioly/mit20-astro-key.pdf">Key</a></li>
+  <li><a href="/assets/pdf/scioly/mit20-walkthrough.pdf">FRQ Walkthrough</a></li>
+</ul>
+
+<h3 id="ut-invitational-oct-2019">UT Invitational Oct 2019</h3>
+
+<p>For the first time in Astronomy C history, we’ve run the event with live Js9! :)</p>
+
+<p>This year, I made the exam significantly easier. As a result, teams did pretty well on it; one team got close to a perfect score. According to a feedback form, the difficulty and length of the exam was about right for most teams. Keep in mind that more than 50% of competitors responded that they were first-time competitors in astronomy.</p>
+
+<ul>
+  <li><a href="/assets/pdf/scioly/utinv19-astro-exam.pdf">Astronomy C EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utinv19-astro-key.pdf">Astronomy C KEY</a></li>
+  <li><a href="/assets/pdf/scioly/utinv19-astro-mystery.fits">mystery.fits</a></li>
+  <li><a href="/assets/pdf/scioly/utinv19-ds-exam.pdf">Data Science C EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utinv19-ds-key.pdf">Data Science C KEY</a></li>
+  <li><a href="/assets/pdf/scioly/utinv19-ds-chal.ipynb">Data Science C CHALLENGES</a></li>
+  <li><a href="/assets/pdf/scioly/utinv19-ds-chal-sol.ipynb">Data Science C CHALLENGES KEY</a></li>
+</ul>
+
+<hr />
+
+<h3 id="ut-regional-mar-2019">UT Regional Mar 2019</h3>
+
+<p>I finally trialled my computer science event: Algorithm Design! It’s a python-based event that emphasizes both theoretical and practical programming knowledge. The topics include Python syntax, basic programming concepts, Object oriented design, data structures, and the time and space complexity of operations/algorithms on those data structures. Teams are expected to complete both a written test, as well as write code (in a real IDE!) to solve coding challenges. Here are the event materials, minus the coding challenges.</p>
+
+<ul>
+  <li><a href="/assets/pdf/scioly/utreg19-astro-exam.pdf">Astronomy C EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utreg19-astro-key.pdf">Astronomy C KEY</a></li>
+  <li><a href="/assets/pdf/scioly/utreg19-algo-rules.pdf">Algorithm Design C RULES</a></li>
+  <li><a href="/assets/pdf/scioly/utreg19-algo-exam.pdf">Algorithm Design C EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utreg19-algo-key.pdf">Algorithm Design C KEY</a></li>
+</ul>
+
+<h3 id="mit-invitational-jan-2019">MIT Invitational Jan 2019</h3>
+
+<p>This year I had the pleasure of supervising at the renowned MIT invitational (along with Donna and Aditya), where we got to see many talented teams from across the country compete. This year’s exam was, in my opinion, at least an order of magnitude harder than last year’s. This resulted in generally low scores across the board. In addition to the objective difficulty, the exam was also long. This meant that performing well was a matter of good (lucky?) time management as much as it was about actual skill. In my opinion, that’s not how an exam should be, and it’s my bad for underestimating the difficulty and length of the exam. It’s also only mid-season, so teams are not as prepared as they will be when they compete at state/nationals.</p>
+
+<p>I do think that this exam can be used as a good guide to studying, both for teams that attended and teams that didn’t. However, I know that finding good resources and helpful information can be hard. I’ve written a walkthrough for section B (the section that I wrote) which explains each answer in depth, and refers you to links which contain more information. I hope you find this helpful and that it can guide your studying a little.</p>
+
+<ul>
+  <li><a href="/assets/pdf/scioly/mit19-astro-exam.pdf">Exam</a></li>
+  <li><a href="/assets/pdf/scioly/mit19-astro-key.pdf">Key</a></li>
+  <li><a href="/assets/pdf/scioly/mit19-image-sheet.pdf">Image sheet</a></li>
+  <li><a href="/assets/pdf/scioly/mit19-frq-walkthrough.pdf">Free response walkthrough</a></li>
+</ul>
+
+<h3 id="ut-invitational-oct-2018">UT Invitational Oct 2018</h3>
+
+<p>These are the exams we used at the UT Invitational. Shout out to Aditya Shah for helping me put together these exams!</p>
+
+<ul>
+  <li><a href="/assets/pdf/scioly/utinv18-astro-exam.pdf">Astronomy C EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utinv18-astro-key.pdf">Astronomy C KEY</a></li>
+  <li><a href="/assets/pdf/scioly/utinv18-ss-exam.pdf">Solar System B EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utinv18-ss-key.pdf">Solar System B KEY</a></li>
+</ul>
+
+<hr />
+
+<h3 id="ut-regional-mar-2018">UT Regional Mar 2018</h3>
+
+<ul>
+  <li><a href="/assets/pdf/scioly/utreg18-astro-exam.pdf">Astronomy C EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utreg18-astro-key.pdf">Astronomy C KEY</a></li>
+  <li><a href="/assets/pdf/scioly/utreg18-ss-exam.pdf">Solar System B EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utreg18-ss-key.pdf">Solar System B KEY</a></li>
+</ul>
+
+<h3 id="ut-invitational-oct-2017">UT Invitational Oct 2017</h3>
+
+<p>In hindsight, I was a little overzealous about writing a challenging Astronomy test; I ended up with an exam which was beneficial to the most competitive teams, but impenetrable for most other teams. Of course, this is not what Science Olympiad is about – especially at the invitational level. I want to encourage new teams to pursue astronomy, not discourage them. I’m making an effort to write tests which are more accessible to newer teams, while still being challenging for more experienced teams.</p>
+
+<ul>
+  <li><a href="/assets/pdf/scioly/utinv17-astro-exam.pdf">Astronomy C EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utinv17-astro-key.pdf">Astronomy C KEY</a></li>
+  <li><a href="/assets/pdf/scioly/utinv17-ss-exam.pdf">Solar System B EXAM</a></li>
+  <li><a href="/assets/pdf/scioly/utinv17-ss-key.pdf">Solar System B KEY</a></li>
+</ul>]]></content><author><name></name></author><category term="outreach" /><summary type="html"><![CDATA[All exams/solutions/tutorials I've made for science olympiad]]></summary></entry><entry><title type="html">Blackbody radiation made simpler</title><link href="https://dkarkada.github.io/blog/2019/blackbody/" rel="alternate" type="text/html" title="Blackbody radiation made simpler" /><published>2019-08-15T00:00:00-07:00</published><updated>2019-08-15T00:00:00-07:00</updated><id>https://dkarkada.github.io/blog/2019/blackbody</id><content type="html" xml:base="https://dkarkada.github.io/blog/2019/blackbody/"><![CDATA[<p>I first learned about Planck’s law for blackbody radiation studying stellar astrophysics. In simple terms, it tells us a few things about an “ideal” hot object:</p>
+
+<ul>
+  <li>It emits light at all frequencies</li>
+  <li>Its temperature determines the total amount of light emitted</li>
+  <li>Its temperature also determines the amount of light emitted at each particular frequency (relative to other frequencies)</li>
+</ul>
+
+<p>Planck’s law gives the intensity of light \(B\) at a given frequency and temperature. In math, the function looks like this:</p>
+
+\[B(\omega, T)=\frac{\omega^2}{4\pi^3c^2}\frac{\hbar\omega}{e^{\hbar\omega/(kT)}-1}\]
+
+<p>You can see that at small \(\omega\) (redder light) the intensity of light drops to zero (due to the first factor) and at large \(\omega\) (bluer light) the intensity of light <em>also</em> drops to zero (due to the exponential). So the spectrum has a peak somewhere in the middle, and the peak depends on the object temperature. That’s why hot stars are bluer and cool stars are redder. All of this made perfectly good sense to me.</p>
+
+<p>In sophomore year of college, we derived Planck’s law in class. I won’t go through the derivation because it’s extremely standard, but it involves imagining a bunch of “modes” and “oscillators” inside an insulated cavity with a small peephole. This was super confusing to me, because it seemed so ad-hoc. What is the cavity? What is the oscillator? Sure, we get Planck’s law in the end, but how was this related to actual hot, glowing things like stars and stovetops? I can guarantee you that the sun is not a box with a peephole.</p>
+
+<p>I tried to ask about it, but the answer was: “This is just an idealization, don’t worry about the cavity.” Every derivation I found online kept referring to this same cursed cavity. What’s the deal with this cavity?? Why did I have to think about boxes and oscillators and standing waves to understand what seems to be a much more general phenomenon?</p>
+
+<h3 id="the-punchline-tldr">The punchline (tl;dr)</h3>
+
+<p>We don’t need to talk about cavities to understand Planck’s law. The real takeaways are</p>
+<ul>
+  <li>Light <em>itself</em> can have a temperature, and we can treat the EM field as a statistical mechanical ensemble of energy carriers.</li>
+  <li>Then Planck’s law decomposes into three parts: the energy per photon, the number of photons per mode, and the number of modes per unit frequency.</li>
+  <li>The energy per photon \(E=\hbar\omega\) is given by quantum mechanics</li>
+  <li>The number of photons per mode is the Bose-Einstein distribution (since photons are bosons). This insight is what allows us to avoid the ultraviolet catastrophe</li>
+  <li>The number of modes per unit frequency comes from the density of states. Calculating the density of states is the only step you might need the cavity for</li>
+  <li>Multiplying these terms gives the energy per unit frequency, which is the Planck function we want.</li>
+</ul>
+
+<h3 id="light-and-matter">Light and matter</h3>
+
+<p>To start to understand why stars produce a spectrum that nearly follows the Planck law, let’s first talk about how light interacts with matter. I’m not an expert on this, so I’ll avoid specific details. The key is to rethink the idea of a photon: not as particles, but as blips of energy on an invisible string. The string represents the EM field, which extends through all of space. Charged particles like electrons and protons interact with this string, sometimes plucking it like a harp to produce new blips, and sometimes absorbing existing blips. In physics terms, charged particle interactions can produce or absorb photons.</p>
+
+<p>You can imagine there being infinitely many strings, each corresponding to a different frequency, kinda like how a harp has a separate string for each note. The difference is, when you pluck a harp string, you can choose how loudly or softly to pluck. The EM field isn’t like that. It’s <em>quantized</em>, which means that there’s only a single “volume” that you can pluck each string at. If you want to put more energy into the string, you can’t just pluck it louder. You have to pluck it multiple times. And since each pluck has a predetermined energy \(E=\hbar\omega\), the total energy in the string can only take discrete values (integer multiples of the single-pluck energy).</p>
+
+<p>Important note: these strings are just a metaphor (and completely unrelated to the strings from string theory). Unlike harp strings, these strings are 3-dimensional, not 1-dimensional. These EM strings all coexist in the same space. Actually, the only thing they really have in common with an instrument’s strings is that you can “pluck” them by adding photons and “mute” them by absorbing photons.</p>
+
+<p>Each different interaction between charged particles plucks a different string, unique to that interaction. For example, a proton and electron, initially configured in the Hydrogen 3s state, can interact in such a way that they pluck the \(E=1.89\;\mathrm{eV}\) string and drop into the Hydrogen 2s state. This is the famous Balmer alpha transition: the electron drops an energy level, a photon with energy \(E=1.89\;\mathrm{eV}\) flies out.</p>
+
+<p>When you have a single atom, there are only so many interactions you can have. And so, there are only so many strings that can be plucked. That’s why the atomic spectra are discrete. But when you have a bunch of atoms – say, Avogadro’s number of them – they all interact with each other in super complicated ways, and the number of available interactions skyrockets. So together, they can pretty much pluck any string of their choosing. So the question is: how often is each string plucked?</p>
+
+<p>The question I just asked is completely equivalent to the blackbody problem. We want to know which frequencies of light are emitted from a blackbody, and with what intensity. Since the strings each correspond to a particular frequency, and the number of photons corresponds to the intensity, we can derive the Planckian spectrum by answering the question about plucked strings.</p>
+
+<h3 id="thermalization">Thermalization</h3>
+
+<p>For me, the key insight into blackbody radiation was understanding thermalization. Roughly speaking, two systems are thermalized with each other when their energies are in balance with each other. Any flow of energy in one direction exactly matches the opposite flow. For matter, we invented a quantity called “temperature” to measure this. If two objects are at different temperatures, and then you allow them to transfer energy, energy will flow from the hotter body to the cooler body until their temperatures match. This is the <em>definition</em> of temperature: “the thing that’s equal when two objects are in thermal equilibrium.”</p>
+
+<p>It’s easy to think about how two systems made of matter can thermalize with each other. It’s why we put ice in our drinks to cool them down, or why we enjoy hot chocolate in the winter. The next step is to imagine that one of the systems is some matter (like a hot star) and the other system <em>is the EM field</em>. This is a bit of a conceptual leap. We’re saying that the EM field has a “temperature” and can either “heat up” or “cool down” when it “touches” an object.</p>
+
+<p>Weird as that is, we can see that the EM field <em>does</em> trade energy with matter. That’s what I was talking about earlier, with how electrons and protons can pluck the EM strings, or absorb existing blips on those strings. This isn’t that much different from an ice cube plucking energy from the glass of water, causing the ice cube to slowly melt and the water to chill. Now we’re just attaching a number – temperature – to the infinite-stringed EM harp.</p>
+
+<p>Actually, we’re going to go one step further. As I mentioned before, if we have enough atoms, they can pretty much pluck any string of their choosing. So you can imagine one string getting a blip absorbed by the atoms, which then interact with each other and redistribute that energy within themselves, and eventually pluck another string. So in the end, the gas particles are just a conduit: <em>the thermal equilibration is actually happening between the different strings themselves</em>.</p>
+
+<h3 id="the-three-factors">The three factors</h3>
+
+<p>This is great! Now, we’ve conceptually gotten rid of the atoms. All we have is the EM strings, all trying to equilibrate some fixed amount of energy among themselves. And this is where statistical mechanics comes in. Satyendra Bose showed that for bosons (such as photons) which don’t have restrictions on the number of blips per string, the number of blips you expect to find on a given string is</p>
+
+\[n(E) = \frac{1}{e^{E/kT}-1}\]
+
+<p>where \(E=\hbar\omega\) is the single-pluck energy of the string, and \(kT\) is the temperature (scaled to use units of energy). Multiply this by the energy per blip (just \(E\)) and you get the expected energy on a given string:</p>
+
+\[\langle E \rangle = \frac{\hbar\omega}{e^{\hbar\omega/kT}-1}\]
+
+<p>Ok sweet, we’re almost there. The last issue we need to take care of is that there are an uncountably infinite number of strings. The Planck function deals with this by being a <em>density function</em>. This means that \(B(\omega, T)\) doesn’t directly give the intensity of light at <em>exactly</em> frequency \(\omega\). Instead, it gives the intensity of light in an infinitesimally small window around \(\omega\). In other words, to get the total energy in a certain frequency band, you need to integrate the Planck function.</p>
+
+<p>To turn our energy-per-string into a density function, we need to multiply a third factor: the <em>density of states</em>. Intuitively, this factor counts the number of strings in the small window around \(\omega\). I won’t go through the calculation, but in the end, the total number of states within the window \([\omega,\;\omega+\mathrm{d}\omega]\) is \(\omega^2/4\pi^3c^2\;\mathrm{d}\omega\).</p>
+
+<p>Multiplying these together: The energy per unit frequency (a.k.a the Planck function) is: energy per photon \(\times\) number of photons per string \(\times\) number of strings per unit frequency:</p>
+
+\[B(\omega, T)=\hbar\omega \cdot \frac{1}{e^{\hbar\omega/(kT)}-1} \cdot \frac{\omega^2}{4\pi^3c^2}\]
+
+<h3 id="a-real-example">A real example</h3>
+
+<p>So how does this explain why stars have near-perfect blackbody spectra? It’s because we made a few assumptions in our derivation, and the conditions inside a stellar atmosphere satisfy these assumptions.</p>
+
+<p>The first assumption is that the EM field is in contact with charged particles, and these particles are at a certain temperature. In the atmosphere of a star, there are a ton of hydrogen atoms, so the EM field has plenty of protons and electrons particles to interact with. These atoms have had ample time to thermalize with each other, so they’re all at the same temperature (at least the ones near the surface).</p>
+
+<p>The second assumption is that the EM field can freely trade energy with the matter. If the matter can only pluck certain strings, then the EM field has no hope of equilibrating with itself. But in a star, we have a bajillion atoms, all interacting with each other and with the EM field. This means that there are an ultra-bajillion different possible interactions, each plucking different strings. So, the EM field can steal energy from the hot particles, and it can freely distribute that energy among all its different strings, until it’s in thermal equilibrium with the matter and with itself.</p>
+
+<p>And that’s it! Once the EM field is thermalized, that’s the definition of blackbody radiation.</p>
+
+<p>But the star’s atmosphere doesn’t go on forever – the gas particles eventually end at the surface of the star, and there’s just outer space after that. But the EM field pervades the whole universe, not just the inside of the star. So all those blips which have been plucked can keep travelling along those strings, flying away from the star until they hit our telescopes.</p>
+
+<p>Because of this, all hot objects are always bleeding away energy; the EM field steals it and runs. If the star weren’t constantly replenishing its energy via nuclear fusion, then the stolen energy would quickly cause the star to cool into a cold, dim ball of atoms.</p>
+
+<h3 id="takeaways">Takeaways</h3>
+
+<p>My qualm with the standard presentation of the derivation of the Planck function is that it doesn’t clearly explain the relationship between the oscillators, the cavity, the modes, and the radiation. It was unclear to me which parts were mathematical tricks, which parts underlied “real” physics, and how this all related to the physics of real thermal radiation (like stars).</p>
+
+<p>The explanation I gave is just how I think of it. It’s nothing remarkable or revolutionary, and in retrospect, I can see how it fits in with the cavity/oscillator picture. I now see that the cavity is merely a tool to calculate the density of states, and has no other physical basis. The oscillators are just a way to abstract away the mechanism by which the different strings (modes) thermalize with each other. But I think spelling these things out can really help aid student understanding. Factoring the Planck function into the density of states, the photon energy, and the Bose-Einstein distribution really clarified a lot of conceptual misunderstandings on my end. That’s why I wanted to write this post.</p>]]></content><author><name></name></author><category term="science" /><category term="essay" /><summary type="html"><![CDATA[Teaching blackbody radiation using the "cavity with a hole" is confusing]]></summary></entry><entry><title type="html">Why I’m involved in Science Olympiad</title><link href="https://dkarkada.github.io/blog/2017/scioly-origin/" rel="alternate" type="text/html" title="Why I’m involved in Science Olympiad" /><published>2017-11-07T00:00:00-08:00</published><updated>2017-11-07T00:00:00-08:00</updated><id>https://dkarkada.github.io/blog/2017/scioly-origin</id><content type="html" xml:base="https://dkarkada.github.io/blog/2017/scioly-origin/"><![CDATA[<p>Science Olympiad as a whole was an absolutely integral part of my time in high school. It was enriching academically, personally, and socially – some of my best memories are of spending time with my teammates, whether it be solving hard engineering problems, discussing competitive strategies and meta-strategies, or goofing off.</p>
+
+<p>My freshman year, I had swim practice after school; that effectively prevented me from seriously committing to any other afterschool activity, including Science Olympiad. My sophomore year, swim practice got moved to the morning, and I was able to join. The Science Olympiad team had made Nationals the previous year, and I wanted a part of that. Unfortunately, in my sophomore and junior years, our school was on the losing end of the “Texas bloodbath”: a state tournament with three highly competitive teams, only two of which advance to nationals.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/team-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/team-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/team-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/team.png" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+
+<p>For the most part, I competed in engineering events; these involved designing and building devices that performed some desired task effectively and reliably. My senior year, I ended up having a change of pace. I picked up Astronomy, since a) one of our previous astronomy experts had graduated and needed a replacement, and b) I’d been interested in astronomy as a subject since childhood.</p>
+
+<p>I acquired a digital copy of the classic textbook <em>Introduction to Modern Astrophysics by Carroll and Ostlie</em> and pored through it. In addition to astronomy, I learned a few things: 1) astronomy is not exactly what I’d imagined it was, 2) this is really damn cool, and 3) I’m actually REALLY into it. I’d always had a notion that most of astronomy was about finding and identifying objects in the sky; I was less familiar with the depth of the physics behind our modern understanding of astronomy. Being a physics buff, I found it invigorating.</p>
+
+<p>My partner (who had more experience in the event) was absolutely crucial in guiding me in the right direction and offering useful competitive advice, as well as taking care of some of the celestial mechanics and other math that I wasn’t so interested in. This combination of factors – my interest and dedication, his guidance and experience, and surely a few moments of serendipity – resulted in us placing 1st in the event at the state tournament. To add to my ecstasy, our team advanced to nationals, which would be my first time competing at that level. At nationals, my partner and I placed 2nd, which is a moment I’ll always remember with great pride. Our team as a whole placed 6th overall – the highest placement our school had ever achieved at nationals.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/ev-480.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/ev-800.webp" />
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/ev-1400.webp" />
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/ev.png" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+
+<p>The weeks immediately following nationals were a euphoric blur. Nationals had been a sort of catharsis of 3 years of tension for our team, and as a senior I was finally able to indulge myself in true senioritis. I spent a good amount of that time reflecting. It seemed fitting that I’d come full circle: my first scientific love as a kid was astronomy, and here I was again, rediscovering that passion in a new context, in a new light. And, in all truth, it was only through a series of happy coincidences that I even ended up in the Astronomy event in the first place, which made it feel even more special.</p>
+
+<p>I’d decided before nationals that I was going to get involved with Science Olympiad as an alumnus, helping to run the UT tournament in some way. In part due to my intrinsic interest, and in part due to my personal success at nationals, I ended up running the Astronomy event at UT invitational during my freshman year of college. Around the same time, I reached out to Donna Young, the national event supervisor for Astronomy. Her immediate friendliness and enthusiasm eventually led me to contribute to running Astronomy at the national level. Somewhere along the way, I decided to pick up an astronomy major, and maybe even study astrophysics in graduate school.</p>
+
+<p>The point of this story is to illustrate how influential Science Olympiad has been to me – not just in high school, but also far beyond. If you’re currently a competitor reading this (not necessarily competing in Astronomy), here’s the takeaway: work hard and take your efforts seriously, because they can end up shaping your life in ways you may not expect.</p>]]></content><author><name></name></author><category term="outreach" /><category term="misc" /><summary type="html"><![CDATA[I was a competitor for 3 years. Now I'm involved in supervising Astronomy C and Data Science C at all levels of competition. Why am I still doing this?]]></summary></entry></feed>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <!-- Head -->
+  <head>    <!-- Metadata, OpenGraph and Schema.org -->
+    
+
+    <!-- Standard metadata -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Statistical physics of signal propagation in deep neural networks | Dhruva's Dumb Website</title>
+    <meta name="author" content="Dhruva  Karkada" />
+    <meta name="description" content="Using statistical physics to understand what makes a good activation function" />
+    <meta name="keywords" content="dhruva-karkada, deep-learning, physics" />
+
+
+    <!-- Bootstrap & MDB -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha256-DF7Zhf293AJxJNTmh5zhoYYIMs2oXitRfBjY+9L//AY=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/css/mdb.min.css" integrity="sha256-jpjYvU3G3N6nrrBwXJoVEYI/0zw8htfFnhT9ljN3JJw=" crossorigin="anonymous" />
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.1/css/academicons.min.css" integrity="sha256-i1+4qU2G2860dGGIOJscdC30s9beBXjFfzjWLjBRsBg=" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons">
+
+    <!-- Code Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jwarby/jekyll-pygments-themes@master/github.css" media="none" id="highlight_theme_light" />
+
+    <!-- Styles -->
+    
+    <link rel="shortcut icon" href="/assets/img/godmode.png"/>
+    
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="canonical" href="https://dkarkada.github.io/blog/2022/stat-mech-signal-prop-nn/">
+    
+    <!-- Dark Mode -->
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jwarby/jekyll-pygments-themes@master/native.css" media="none" id="highlight_theme_dark" />
+
+    <script src="/assets/js/theme.js"></script>
+    <script src="/assets/js/dark_mode.js"></script>
+    
+
+  </head>
+
+  <!-- Body -->
+  <body class="fixed-top-nav sticky-bottom-footer">
+
+    <!-- Header -->
+    <header>
+
+      <!-- Nav Bar -->
+      <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top">
+        <div class="container">
+          <a class="navbar-brand title font-weight-lighter" href="/">Dhruva's Dumb Website</a>
+          <!-- Navbar Toggle -->
+          <button class="navbar-toggler collapsed ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar top-bar"></span>
+            <span class="icon-bar middle-bar"></span>
+            <span class="icon-bar bottom-bar"></span>
+          </button>
+
+          <div class="collapse navbar-collapse text-right" id="navbarNav">
+            <ul class="navbar-nav ml-auto flex-nowrap">
+
+              <!-- About -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/">about</a>
+              </li>
+              
+              <!-- Blog -->
+              <li class="nav-item active">
+                <a class="nav-link" href="/blog/">blog<span class="sr-only">(current)</span></a>
+              </li>
+
+              <!-- Other pages -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/research/">research</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/teaching/">teaching</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/cv/">cv</a>
+              </li>
+
+              <!-- Toogle theme mode -->
+              <li class="toggle-container">
+                <button id="light-toggle" title="Change theme">
+                  <i class="fas fa-moon"></i>
+                  <i class="fas fa-sun"></i>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Content -->
+    <div class="container mt-5">
+      <!-- _layouts/post.html -->
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Statistical physics of signal propagation in deep neural networks</h1>
+    <p class="post-meta">December 7, 2022</p>
+    <p class="post-tags">
+      <a href="/blog/2022"> <i class="fas fa-calendar fa-sm"></i> 2022 </a>
+        ·  
+        <a href="/blog/tag/science">
+          <i class="fas fa-hashtag fa-sm"></i> science</a>  
+          
+
+    </p>
+  </header>
+
+  <article class="post-content">
+    \[\newcommand{\E}[1]{\left\langle#1\right\rangle}\]
+
+<p>Here I’ve summarized some of the main ideas that underlie the theory of signal propagation in deep neural networks. This theory, which is strongly inspired by the physics of statistical field theory, explains the success of ReLU as an activation function for deep networks and also predicts that the Kaiming initialization scheme is optimal. I wrote this as a final report for a course on critical phenomena in equilibrium and nonequilibrium systems. I hope it’s informative!</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>In machine learning, we are interested in learning patterns in data. In regression problems, we focus on learning a function that uses data (e.g. a digital image) to predict properties of the data (e.g. whether the image contains a cat). To do this, we use a general-purpose function approximator: a neural network. A neural network (NN) parameterizes a family of functions by stacking <em>layers</em> of interleaved affine transformations and element-wise nonlinear transformations. For example,</p>
+
+\[f(\vec{x}) = \boldsymbol{A}^{(L)} \phi \boldsymbol{A}^{(L-1)}\phi\dots \phi \boldsymbol{A}^{(1)} \vec{x}\]
+
+<p>where \(f(\vec{x})\) is the NN output on input \(\vec{x}\) and the \(\boldsymbol{A}^{(\ell)}\) are affine transformations each defined by tunable (i.e. trainable) parameters. The index \(\ell\) enumerates the layers, \(L\) is the <em>depth</em> of the neural network, and \(\phi(x_i)\) is a nonlinear scalar function which acts element-wise on a vector. Choosing \(L\) and \(\phi\) is a design decision made a priori. When we train this NN, we tune its affine parameters to search the family of functions for a specific function that well-approximates the true pattern in the data. Training is computationally expensive, so we would like to use theoretical principles to guide design decisions and maximize performance.</p>
+
+<p>Unfortunately, we lack a complete theory that predicts the final performance of a given NN before actually training it. The fundamental difficulty is that neural networks may have billions of parameters whose training dynamics are coupled. This justifies using tools from statistical physics to uncover the basic behaviors and properties of these large-scale systems. In fact, mean field theory, partition functions, replica calculations, phase transitions, and more have become standard in NN theory, reflecting a long history of contributions from statistical physicists to NN theory (<a href="https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745" target="_blank" rel="noopener noreferrer">Bahri et al. 2020</a>).</p>
+
+<p>In the past decade, practitioners have provided evidence that deeper neural networks a) perform better, but b) are more challenging to optimize. Subsequent work empirically found that a particular choice of \(\phi\) known as ReLU helped alleviate the optimization challenge of deep neural networks (<a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noopener noreferrer">He et al. 2015</a>). All of these observations lacked theoretical explanations for many years. In this report, I will summarize recent results that use statistical field theory to convincingly explain these phenomena.</p>
+
+<h2 id="field-theory-of-neural-networks">Field theory of neural networks</h2>
+
+<p>In a trained neural network, we expect that two input vectors that are semantically similar (e.g. that both are images of cats) should be pushed towards each other as the input propagates through the network. In this sense, the role of a neural network is to extract semantic structure from the relevant data, which is typically some complicated submanifold in input space (i.e. a ‘typical’ random vector in image space is just noise; we only care about the manifold of ‘natural’ images).</p>
+
+<p>Of course, the way an input is transformed through the network depends on the affine parameters. While the optimization algorithm provides the dynamical equation for the parameters, we must also specify the initial conditions. In practice, affine parameters are initialized i.i.d. Gaussian as</p>
+
+\[W^{(\ell)}_{ij}\sim \mathcal{N}(0, \sigma_w^2/N) \quad\mathrm{and}\quad b^{(\ell)}_i \sim \mathcal{N}(0, \sigma_b^2)\]
+
+<p>where \(\boldsymbol{A}^{(\ell)}(\vec{v})=\boldsymbol{W}^{(\ell)}\vec{v}+\vec{b}^{(\ell)}\) and \(N\) is the dimension of the affine input. The parameter variances \(\sigma_b^2\) and \(\sigma_w^2\) must be chosen carefully a priori; <a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noopener noreferrer">He et al. (2015)</a> suggest choosing \(\sigma_w^2=2\), which is now standard due to its empirical success. Now, as in statistical physics, we study the resulting ensemble of neural networks. In particular, we characterize a neural network’s manipulation of the data manifold by studying the inner product between two arbitrary inputs as they are processed layer-by-layer:</p>
+
+\[G_{i}^{(\ell)}(\vec{x}, \vec{x}') := \E{z_i^{(\ell)}(\vec{x}) z_i^{(\ell)}(\vec{x}')}\]
+
+<p>where \(\vec{z}^{(\ell)}(x)\) is the output<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup> of layer \(\ell\) on input \(x\), and \(i\) is a vector component index (dropped later for clarity). The expectation is over the network ensemble. The quantity \(G\) characterizes the changing geometry of the data manifold as it propagates through the network ensemble.</p>
+
+<p>Note that \(G\) is precisely the two-point correlator of layer outputs (<a href="https://doi.org/10.1017/CBO9780511815881" target="_blank" rel="noopener noreferrer">Kardar 2007</a>). So, we can restate our goal as characterizing the correlator’s flow from layer to layer. If we want neural networks to preserve important structural information about the input as it flows to deep layers, then we must ensure that the correlator is flow-invariant: in other words, we need to initialize the NN at criticality, so that \(G^{(\ell)}\sim G^{(0)}\) for all \(\ell\). A very deep network initialized far from criticality will yield outputs uncorrelated to the input, and the optimization algorithm will therefore fail (<a href="https://arxiv.org/abs/1611.01232" target="_blank" rel="noopener noreferrer">Schoenholz et al. 2016</a>).</p>
+
+<p>However, a major challenge remains. Although the first-layer “field” \(z_i^{(1)}\) is Gaussian-distributed, as \(z_i^{(\ell)}\) flows along increasing \(\ell\), its ensemble distribution increasingly deviates from Gaussianity<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>. This makes theoretical analysis intractable (<a href="https://arxiv.org/abs/2106.10165" target="_blank" rel="noopener noreferrer">Roberts, Yaida, and Hanin 2022</a>). To circumvent this, we take the “infinite-width limit”: we take the dimension of the codomains of all \(\boldsymbol{A}^{(\ell&lt;L)}\) to infinity, so that all the \(\vec{z}^{(\ell&lt;L)}\) are infinite-dimensional. It turns out that ensemble fluctuations of the correlator vanish in this limit. In this mean-field limit, the output fields \(z_i^{(\ell)}\) are zero-mean Gaussian random fields and are thus fully characterized by the correlator \(G^{(\ell)}\).</p>
+
+<p>This field-theoretic framework allows us to theoretically compute the correlator for a variety of choices of \(\phi\), provides a criterion for criticality, and relates these to the geometry of the data manifold and the trainability of the NN.</p>
+
+<h2 id="criticality-analysis">Criticality analysis</h2>
+
+<p>For a NN to be initialized at criticality, we need the correlator to approach a nontrivial fixed point \(\lim_{\ell\to\infty}G^{(\ell)}=G^*\). This will depend on the choice of the nonlinearity \(\phi\) as well as the initial parameter variances \(\sigma_b^2\) and \(\sigma_w^2\). In the infinite-width (mean-field) limit, we obtain the recursive flow relation</p>
+
+\[G^{(\ell+1)}(\vec{x}_+, \vec{x}_-) =\sigma_b^2 + \sigma_w^2\E{\phi(z_+^{(\ell)}) \phi(z_-^{(\ell)})}\]
+
+<p>where the expectation is tractable in the mean-field limit since it depends only on \(G^{(\ell)}\).</p>
+
+<p><a href="https://arxiv.org/abs/2106.10165" target="_blank" rel="noopener noreferrer">Roberts, Yaida, and Hanin (2022)</a> use perturbative techniques to compute the fixed point \(G^*\) for nonlinearities obeying \(\phi(\lambda x)=\lambda\phi(x)\), which include the ubiquitous \(\mathrm{ReLU}(x)=\max(0,x)\). By linearizing the flow equation around the degenerate limit where both inputs coincide identically, i.e. \(x_\pm = x_0\pm\frac{1}{2}\delta x\), they find a flow in the correlator perturbation, which can be solved to low order in the perturbation. For \(\mathrm{ReLU}\):</p>
+
+\[(G+\delta G)^{(\ell+1)} = \sigma_b^2+\frac{1}{2}\sigma_w^2(G+\delta G)^{(\ell)}\]
+
+<p>which has a fixed point at \((\sigma_b^2, \sigma_w^2)=(0, 2)\). The theory also predicts a semi-critical fixed line at \(\sigma_b^2&gt;0\) and \(\sigma_w^2=2\), where the total correlator increases linearly but the correlator perturbations are at a fixed point. If the NN is initialized on a (semi)critical point, information about the geometric structure of the data can propagate through arbitrarily deep networks without exponentially vanishing or blowing up. As a result, these initialization schemes greatly enhance the trainability of very deep networks, which is exactly what is observed in practice:</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0" max-width="500px">
+        <figure>
+<center>
+  <picture>
+    
+    <source class="responsive-img-srcset" media="(max-width: 480px)" srcset="/assets/img/blog/statphys-nn-phasediagram-480.webp"></source>
+    <source class="responsive-img-srcset" media="(max-width: 800px)" srcset="/assets/img/blog/statphys-nn-phasediagram-800.webp"></source>
+    <source class="responsive-img-srcset" media="(max-width: 1400px)" srcset="/assets/img/blog/statphys-nn-phasediagram-1400.webp"></source>
+    
+
+    <!-- Fallback to the original file -->
+    <img src="/assets/img/blog/statphys-nn-phasediagram.png" class="img-fluid rounded z-depth-1" width="auto" height="auto" data-zoomable="" onerror="this.onerror=null; $('.responsive-img-srcset').remove();">
+
+  </picture>
+</center>
+</figure>
+
+    </div>
+</div>
+<div class="caption">
+    Post-training performance on the MNIST dataset for ReLU networks, as a function of hyperparameters. As depth increases, criticality increasingly determines trainability, and the semicritical phase boundary becomes apparent. Figure adapted from Lee et al. 2017.
+</div>
+
+<p>We can use this formalism to repeat this calculation for other choices of nonlinearity \(\phi\). The result is that there exists a broad class of \(\phi\) which do not permit a fixed point. Deep networks with these nonlinearities are not trainable. The takeaway is that the theory predicts both the unique success of \(\mathrm{ReLU}\) as well as the Kaiming initialization scheme (\(\sigma^2_w=2\)) which is  widely used in practice.</p>
+
+<h2 id="future-directions">Future directions</h2>
+
+<p>Do NNs far from the mean-field limit behave qualitatively differently? Can the field theory framework handle task-specific NN architectures where the affine transforms may have additional structure? Can we go beyond initialization and make quantitative, data-dependent predictions about training dynamics? The field theory formalism presented here is one of many frameworks used to approach the slew of open questions remaining in NN theory. Rapid engineering improvements only deepen the gap between theory and practice; it will take a coherent synthesis of varying perspectives to develop a complete theory of deep learning.</p>
+
+<h2 id="references">References</h2>
+
+<ol>
+  <li><a href="https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745" target="_blank" rel="noopener noreferrer">Bahri, Yasaman et al. (2020). “Statistical mechanics of deep learning”. In: <em>Annual Review of Condensed Matter Physics</em> 11.1.</a></li>
+  <li><a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noopener noreferrer">He, Kaiming et al. (2015). “Delving deep into rectifiers: Surpassing human-level performance on imagenet classification”. In: <em>Proceedings of the IEEE international conference on computer vision</em>, pp. 1026–1034.</a></li>
+  <li><a href="https://doi.org/10.1017/CBO9780511815881" target="_blank" rel="noopener noreferrer">Kardar, Mehran (2007). <em>Statistical physics of fields</em>. Cambridge University Press.</a></li>
+  <li><a href="https://arxiv.org/abs/1611.01232" target="_blank" rel="noopener noreferrer">Schoenholz, Samuel S et al. (2016). “Deep information propagation”. In: <em>arXiv preprint arXiv:1611.01232</em>.</a></li>
+  <li><a href="https://arxiv.org/abs/2106.10165" target="_blank" rel="noopener noreferrer">Roberts, Daniel A, Sho Yaida, and Boris Hanin (2022). <em>The Principles of Deep Learning Theory: An Effective Theory Approach to Understanding Neural Networks</em>. Cambridge University Press.</a></li>
+  <li><a href="https://arxiv.org/abs/1711.00165" target="_blank" rel="noopener noreferrer">Lee, Jaehoon et al. (2017). “Deep neural networks as gaussian processes”. In: <em>arXiv preprint arXiv:1711.00165</em>.</a></li>
+</ol>
+
+<h3 id="footnotes">Footnotes</h3>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>This is the output just before the nonlinearity is applied. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p>The non-Gaussianity originates from “interactions” between field components that breaks their statistical independence. <a href="#fnref:2" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+  </article>
+
+</div>
+
+    </div>
+
+    <!-- Footer -->    <footer class="sticky-bottom">
+      <div class="container mt-0">
+        © Copyright 2024 Dhruva  Karkada. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="noopener noreferrer">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" target="_blank" rel="noopener noreferrer">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a>.
+<br>
+        Last updated: September 19, 2024.
+      </div>
+    </footer>
+
+    <!-- JavaScripts -->
+    <!-- jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootsrap & MDB scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha256-fgLAgv7fyCGopR/gBNq2iW3ZKIdqIcyshnUULC4vex8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/js/mdb.min.js" integrity="sha256-NdbiivsvWt7VYCt6hYNT3h/th9vSTL4EDWeGs5SN3DA=" crossorigin="anonymous"></script>
+
+    <!-- Masonry & imagesLoaded -->
+  <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script defer src="/assets/js/masonry.js" type="text/javascript"></script>
+    
+  <!-- Medium Zoom JS -->
+  <script defer src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script defer src="/assets/js/zoom.js"></script><!-- Load Common JS -->
+  <script defer src="/assets/js/common.js"></script>
+
+    <!-- MathJax -->
+  <script type="text/javascript">
+    window.MathJax = {
+      tex: {
+        tags: 'ams'
+      }
+    };
+  </script>
+  <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js"></script>
+  <script defer src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    
+  </body>
+</html>
