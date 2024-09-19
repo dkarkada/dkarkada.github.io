@@ -104,8 +104,8 @@ blockquote {
 }
 
 .profile {
-  min-width: 300px;
-  max-width: 350px;
+  min-width: 200px;
+  max-width: 200px;
   margin-right: 1rem;
   width: 100%;
 
@@ -355,7 +355,7 @@ footer.sticky-bottom {
 .tag-list {
   border-bottom: 1px solid var(--global-divider-color);
   text-align: left;
-  padding-top: 1rem;
+//   padding-top: 1rem;
 
   ul {
     justify-content: center;
@@ -364,7 +364,7 @@ footer.sticky-bottom {
     p, li {
       list-style: none;
       display: inline-block;
-      padding: 1rem 0.5rem;
+      padding: 0rem 1rem 0.5rem;
       color: var(--global-text-color-light);
     }
   }
