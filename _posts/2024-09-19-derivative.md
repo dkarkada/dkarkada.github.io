@@ -13,7 +13,7 @@ $$\frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\vert\vert\mathbf{W
 
 What's the right way to do this? Is there a recipe that works for arbitrary tensor expressions? Although one can find the recipes for derivatives of common matrix expressions [online](https://en.wikipedia.org/wiki/Matrix_calculus#Identities), here I'll explain a general systematic approach for calculating *any* tensor derivative, assuming no elementwise nonlinearities. At the end there'll be [exercises](#exercises) so you can practice :)
 
-The trick is to use Einstein index notation. If you don't know what that is, read the [next section](#what-is-tensor-contraction) and then come back here. Right now, I'll just state the punchline.
+The trick is to use Einstein index notation. If you don't know what that is, read the [next section](#a-short-primer-on-tensor-contraction) and then come back here. Right now, I'll just state the punchline.
 
 1. **Write your tensor expression in Einstein notation.** Here are the rules:
     1. Vectors have upper indices, so $$\mathbf{x}=x^\mu$$. Matrices have one upper and one lower index, with the upper index to the left of the lower, to indicate that the upper index contracts to the left and vice versa. (Think "upper index = row index" and "lower index = column index.") For example, $$\mathbf{M}={M^\mu}_\nu$$ and $$\mathbf{Mx}={M^\mu}_\nu x^\nu$$. 
