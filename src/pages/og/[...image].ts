@@ -24,10 +24,10 @@ export const { getStaticPaths, GET } = OGImageRoute({
   getImageOptions: (_path, page) => ({
     title: page.title,
     description: page.description,
-    logo: {
-      path: './public/icons/og-logo.png', // Required local path and PNG format
-      size: [250],
-    },
+    // logo: {
+    //   path: './public/icons/og-logo.png', // Required local path and PNG format
+    //   size: [250],
+    // },
     border: {
       color: [242, 241, 245],
       width: 20,

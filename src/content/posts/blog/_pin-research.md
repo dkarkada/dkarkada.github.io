@@ -14,8 +14,8 @@ Here are some findings from the research I've worked on.
 
 [Paper link.](https://arxiv.org/abs/2502.09863)
 
-What do contrastive word embedding models (e.g., word2vec) learn, and how? Specifically, what is learned by a model of size $$d$$ after training time $$t$$? We answer these questions by analytically solving for the learning dynamics. We find that
-* they learn one top-level concept at a time until its capacity (latent dimension $$d$$) is saturated
+What do contrastive word embedding models (e.g., word2vec) learn, and how? Specifically, what is learned by a model of size $$d$$ after training time $$t$$? By analytically solving for its learning dynamics, we find that
+* it learns one topic-level concept at a time until its capacity (latent dimension $$d$$) is saturated
 * each concept is represented as an orthogonal direction in latent space
 * each of these orthogonal concepts is learned essentially independentally from the others
 * these orthogonal semantic directions (and their learning trajectory) can be *explicitly computed in closed form* from the corpus statistics (!!!)

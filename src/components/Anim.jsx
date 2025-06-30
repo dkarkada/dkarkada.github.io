@@ -176,7 +176,7 @@ let loadPromise = null
 export function loadAnimData() {
 	if (loadPromise) return loadPromise
 	loadPromise = (async () => {
-		const url = "/assets/anim/frames3.bin"
+		const url = "/assets/anim.bin"
 		const bin16 = new Float16Array(await (await fetch(url)).arrayBuffer());
 		const blocks   = bin16.length / KSQ;
 		T = blocks / C;
