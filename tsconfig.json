@@ -1,0 +1,21 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "allowJs": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.astro",
+    "uno.config.ts",
+    "astro.config.ts",
+    "src/components/Anim.jsx"
+  ],
+  "exclude": ["dist"],
+  // I added this
+  "moduleResolution": "node16"
+}

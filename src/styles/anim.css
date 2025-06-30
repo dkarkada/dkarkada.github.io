@@ -1,0 +1,12 @@
+.animContainer {
+  height: 224px;
+}
+
+.animCanvas {
+  display: block;
+  height: 224px;
+  border-radius: 10%;
+  border-color: rgb(7, 4, 39);
+  border-width: 3px;
+  background:#4e4c42;
+}

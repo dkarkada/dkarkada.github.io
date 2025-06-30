@@ -1,0 +1,64 @@
+---
+import Footer from '@/components/Footer.astro'
+import Anim from '../components/Anim.jsx';
+import Navbar from '@/components/Navbar.astro'
+import CodeCopyButton from '@/components/Widgets/CodeCopyButton.astro'
+import GithubCard from '@/components/Widgets/GithubCard.astro'
+import GsapAnimation from '@/components/Widgets/GsapAnimation.astro'
+import PhotoSwipe from '@/components/Widgets/PhotoSwipe.astro'
+import SoundEffect from '@/components/Widgets/SoundEffect.astro'
+import themeConfig from '@/config'
+import Head from '@/layouts/Head.astro'
+import { getPageInfo } from '@/utils/page'
+import '@/styles/extend.css'
+import '@/styles/font.css'
+import '@/styles/global.css'
+import '@/styles/lqip.css'
+import '@/styles/markdown.css'
+import '@/styles/transition.css'
+
+interface Props {
+  postTitle?: string
+  postDescription?: string
+  postSlug?: string
+}
+
+const { postTitle, postDescription, postSlug} = Astro.props
+const { isPost, isAbout } = getPageInfo(Astro.url.pathname)
+const fontStyle = themeConfig.global.fontStyle === 'serif' ? 'font-serif' : 'font-sans'
+const animationEnabled = !themeConfig.global.reduceMotion
+const MarginBottom = isPost && themeConfig.comment?.enabled
+  ? 'mb-10' // Post page with comments
+  : 'mb-12' // Other pages without comments
+const isStaticPost = Astro.url.pathname === '/blog/2025/my-static-post/'
+---
+
+<html
+  lang="en"
+  class:list={[
+    fontStyle,
+    { 'scroll-smooth': isPost },
+  ]}
+>
+  <Head {postTitle} {postDescription} {postSlug} />
+  <body>
+    <div
+      class="mx-auto max-w-205.848 min-h-vh w-full min-h-dvh"
+      p="x-[min(7.25vw,3.731rem)] y-10"
+      lg="mx-[max(5.75rem,calc(50vw-34.25rem))] my-20 max-w-[min(calc(75vw-16rem),44rem)] min-h-full p-0"
+    >
+      <Anim client:load isAbout={isAbout}/>
+      <Navbar />
+      <main class={MarginBottom}>
+        <slot />
+      </main>
+      <Footer />
+    </div>
+    {animationEnabled && <GsapAnimation />}
+    <!-- <Button /> -->
+    <SoundEffect />
+    <CodeCopyButton />
+    <PhotoSwipe />
+    <GithubCard />
+  </body>
+</html>

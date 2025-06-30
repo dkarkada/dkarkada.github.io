@@ -1,0 +1,51 @@
+---
+import { getPageInfo, getCleanPath} from '@/utils/page'
+
+const { isHome, isPost, isTag} = getPageInfo(Astro.url.pathname)
+
+const isPostActive = isHome || isPost
+const isTagActive = isTag
+
+
+
+function getNavItemClass(isActive: boolean) {
+  return isActive
+    ? 'highlight-static c-primary font-bold after:bottom-0.7em'
+    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold)'
+}
+
+const navItems = [
+  {
+    href: '/',
+    label: 'Posts',
+    className: getNavItemClass(isPostActive),
+  },
+  {
+    href: '/tags/',
+    label: 'Tags',
+    className: getNavItemClass(isTagActive),
+  },
+]
+---
+
+<nav
+  aria-label="Site Navigation"
+  class:list={[
+    isPost ? 'hidden lg:block' : '',
+    'mb-10.5 text-3.6 font-semibold leading-2.45em font-navbar font-italic',
+    'lg:(uno-desktop-column text-5 bottom-[min(9.04rem+3.85vw,10.5rem)]) cjk:tracking-0.02em',
+  ]}
+>
+  <ul>
+    {navItems.map(item => (
+      <li>
+        <a
+          href={getCleanPath(item.href)}
+          class={item.className}
+        >
+          {item.label}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
