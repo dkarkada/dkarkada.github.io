@@ -4,9 +4,9 @@ export const themeConfig: ThemeConfig = {
   // SITE INFORMATION >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> START
   site: {
     // site title
-    title: "dkarkada",
+    title: "Dhruva's Dumb Website",
     // site subtitle
-    subtitle: "Dhruva's Dumb Website",
+    subtitle: "",
     // site description
     description: '',
     // author name
@@ -38,10 +38,10 @@ export const themeConfig: ThemeConfig = {
       highlight: 'oklch(0.93 0.195089 103.2532 / 0.5)', // rgba(255,235,0,0.5)
     },
     dark: {
-      primary: 'oklch(0.74 0.03 64)',
-      secondary: 'oklch(0.68 0.04 64)', // .64  .05
-      background: 'oklch(0.17 0.03 280)', // .14 .03 286
-      highlight: 'oklch(0.22 0.05 275 / 1.0)',
+      primary: 'oklch(0.86 0.03 64)',
+      secondary: 'oklch(0.74 0.04 64)',
+      background: 'oklch(0.20 0.036 280)',
+      highlight: 'oklch(0.28 0.05 275 / 1.0)',
     },
   },
   // COLOR SETTINGS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END

@@ -18,6 +18,7 @@ const posts = defineCollection({
     // Advanced
     draft: z.boolean().optional().default(false),
     hidden: z.boolean().optional().default(false),
+    showdate: z.boolean().optional().default(true),
     pin: z.number().int().min(0).max(99).optional().default(0),
     toc: z.boolean().optional().default(themeConfig.global.toc),
     lang: z.enum(['', ...allLocales]).optional().default(''),
@@ -28,11 +29,4 @@ const posts = defineCollection({
   }),
 })
 
-const about = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/about' }),
-  schema: z.object({
-    lang: z.enum(['', ...allLocales]).optional().default(''),
-  }),
-})
-
-export const collections = { posts, about }
+export const collections = { posts }

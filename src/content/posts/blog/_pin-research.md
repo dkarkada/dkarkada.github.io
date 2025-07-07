@@ -6,6 +6,7 @@ tags:
   - research
 pin: 97
 abbrlink: research
+showdate: false
 ---
 
 Here are some findings from the research I've worked on.
@@ -28,7 +29,7 @@ Btw, why care about word2vec? I'll give three reasons:
 2. It's a simple and relevant natural language task that requires feature learning! Understanding word2vec gives us a concrete new view into the general phenomenon.
 3. LLMs exhibit behaviors directly analogous to word2vec. Perhaps most strikingly, LLMs often represent abstract semantic concepts as *linear subspaces* of the ambient latent space; this was famously first observed in word2vec, enabling word2vec embeddings to complete analogies such as *man : woman :: king : queen* via vector addition.
 
-![We compare the time course of learning in our simplified model (top) and OG word2vec (bottom), finding striking similarities in their training dynamics and learned representations. Our analytical solution for the optimization dynamics reveals discrete learning steps corresponding to stepwise decreases in the loss (top left). In latent space (right side plots), embedding vectors expand into subspaces of increasing dimension at each learning step. These learned features can be extracted from our theory in closed form given only the corpus statistics and hyperparameters. We provide lots of evidence that our simplified model is an accurate and faithful proxy for word2vec.](../_images/research/qwem.png)
+![We compare the time course of learning in our simplified model (top) and OG word2vec (bottom), finding striking similarities in their training dynamics and learned representations. Our analytical solution for the optimization dynamics reveals discrete learning steps corresponding to stepwise decreases in the loss (top left). In latent space (right side plots), embedding vectors expand into subspaces of increasing dimension at each learning step. These learned features can be extracted from our theory in closed form given only the corpus statistics and hyperparameters. We provide lots of evidence that our simplified model is a faithful proxy for word2vec.](../_images/research/qwem.png)
 
 ## More is better in modern ML
 
@@ -36,7 +37,7 @@ Btw, why care about word2vec? I'll give three reasons:
 
 When are overparameterization and overfitting optimal? Both carry negative connotations classically -- many statistics textbooks warn against fitting very large models to relatively small datasets for fear of angering the overfitting demons and harming generalization. Out of spite, I trained a 25 million parameter ResNet on 50,000 images of CIFAR-10 and it generalized fine. What gives?
 
-To answer this, we provide a theory of generalization in random feature (RF) models. RF regression can be thought of as a finite-feature approximation of kernel ridge regression (KRR), so Jamie's technique is to essentially take the existing eigenframework describing generalization in KRR, and then introduce (and average over) a second source of stochasticity arising from the finite feature sampling randomness. From the resulting equations, it's not hard to show that adding more features never hurts (so long as the ridge regularization is properly tuned). An immediate consequence of this is that infinite overparameterization (i.e., KRR) is optimal (from a generalization perspective). I did a bunch of experiments validing the theory.I did a bunch of experiments validing the theory.
+To answer this, we provide a theory of generalization in random feature (RF) models. RF regression can be thought of as a finite-feature approximation of kernel ridge regression (KRR), so Jamie's technique is to essentially take the existing eigenframework describing generalization in KRR, and then introduce (and average over) a second source of stochasticity arising from the finite feature sampling randomness. From the resulting equations, it's not hard to show that adding more features never hurts (so long as the ridge regularization is properly tuned). An immediate consequence of this is that infinite overparameterization (i.e., KRR) is optimal (from a generalization perspective). I did a bunch of experiments validing the theory.
 
 So that takes care of the overparameterization question. What about regularization? Under what conditions is zero regularization (i.e., perfectly interpolating the training data) optimal? We give a necessary and sufficient condition in terms of the task difficulty (a.k.a. the *source condition*), the kernel spectral decay (a.k.a. the *capacity condition*), and the intrinsic noise level. I did several experiments showing that (convolutional) neural tangent kernels learning vision tasks (e.g., CIFAR-10, MNIST, SVHN) are in this regime in which interpolation is near-optimal.
 

@@ -5,29 +5,13 @@ import { defaultLocale } from '@/config'
 type ExcerptScene = 'list' | 'meta' | 'og' | 'feed'
 
 const parser = new MarkdownIt()
-const isCJKLang = (lang: string) => ['zh', 'zh-tw', 'ja', 'ko'].includes(lang)
 
 // Excerpt length in different scenarios
-const EXCERPT_LENGTHS: Record<ExcerptScene, {
-  cjk: number
-  other: number
-}> = {
-  list: {
-    cjk: 120,
-    other: 240,
-  },
-  meta: {
-    cjk: 120,
-    other: 240,
-  },
-  og: {
-    cjk: 70,
-    other: 140,
-  },
-  feed: {
-    cjk: 70,
-    other: 140,
-  },
+const EXCERPT_LENGTHS: Record<ExcerptScene, number> = {
+  list: 240,
+  meta: 240,
+  og: 140,
+  feed: 140,
 }
 
 const HTML_ENTITIES: Record<string, string> = {
@@ -55,9 +39,7 @@ export function generateExcerpt(
     .replace(/^#{1,6}\s+\S.*$/gm, '')
     .replace(/\n{2,}/g, '\n\n')
 
-  const length = isCJKLang(lang)
-    ? EXCERPT_LENGTHS[scene].cjk
-    : EXCERPT_LENGTHS[scene].other
+  const length = EXCERPT_LENGTHS[scene]
 
   // Remove all HTML tags
   let plainText = parser.render(contentWithoutHeadings)
@@ -70,8 +52,6 @@ export function generateExcerpt(
 
   // Replace line breaks with spaces
   const normalizedText = plainText.replace(/\s+/g, ' ')
-    // Remove spaces after CJK punctuation marks
-    .replace(/([。？！："」』])\s+/g, '$1')
   const excerpt = normalizedText.slice(0, length).trim()
   // Remove trailing punctuation from the excerpt
   if (normalizedText.length > length) {

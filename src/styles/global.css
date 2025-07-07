@@ -14,6 +14,16 @@ body::selection {
   --at-apply: 'bg-highlight';
 }
 
+#noise-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('../assets/img/noiseTexture.png');
+  background-repeat: repeat;
+  opacity: .32;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
 /* PhotoSwipe Background Color */
 .pswp .pswp__bg {
   --at-apply: 'bg-background!';

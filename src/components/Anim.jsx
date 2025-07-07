@@ -166,12 +166,6 @@ function cpuDecodeFrame(frame16) {
 
 /* ========== main loader (memoised) ========== */
 
-async function fileHash(url) {
-	const buf = await (await fetch(url, { cache: 'no-store' })).arrayBuffer();
-	const hash = await crypto.subtle.digest('SHA-256', buf);
-	return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
 let loadPromise = null
 export function loadAnimData() {
 	if (loadPromise) return loadPromise
@@ -268,7 +262,7 @@ function applyFixedHue(imageData) {
 	return imageData;
 }
 
-export default function Anim({isAbout = false}) {
+export default function Anim({isAbout = false, isHome = false}) {
 	const canvasRef = useRef(null);
 	const rafRef    = useRef(null);
 	if (isAbout) {
@@ -374,7 +368,7 @@ export default function Anim({isAbout = false}) {
 					/* ---- tint version ---- */
 					const tinted = applyFixedHue(
 						new ImageData(Uint8ClampedArray.from(img.data), W, H));
-					tintCtx.putImageData(tinted, 0, 0);
+					tintCtx.putImageData(isHome ? img : tinted, 0, 0);
 					
 					/* ---- update fade (time-based) ---- */
 					if (fade !== fadeTarget) {

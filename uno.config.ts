@@ -58,17 +58,6 @@ export default defineConfig({
     'uno-decorative-line': 'mb-4.5 h-0.25 w-10 bg-secondary/25 lg:(mb-6 w-11)',
     'uno-round-border': 'border border-secondary/5 rounded border-solid',
   },
-  variants: [
-    (matcher) => {
-      if (!matcher.startsWith('cjk:')) {
-        return matcher
-      }
-      return {
-        matcher: matcher.slice(4),
-        selector: s => `${s}:is(:lang(zh), :lang(ja), :lang(ko))`,
-      }
-    },
-  ],
   transformers: [
     transformerDirectives(),
     transformerVariantGroup(),

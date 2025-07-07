@@ -10,7 +10,7 @@ function setupPhotoSwipe() {
     return
   }
 
-  const article = document.querySelector('article.heti')
+  const article = document.querySelector('article')
   const images = article?.getElementsByTagName('img') ?? []
   if (images.length === 0) {
     return
@@ -19,7 +19,7 @@ function setupPhotoSwipe() {
   const { innerWidth, innerHeight } = window
 
   lightbox = new PhotoSwipeLightbox({
-    gallery: 'article.heti img',
+    gallery: 'article img',
     pswpModule: () => pswp,
     bgOpacity: 0.9,
     padding: {
