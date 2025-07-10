@@ -17,10 +17,11 @@ body::selection {
 #noise-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-image: url('../assets/img/noiseTexture.png');
+  z-index: -1;
+  background-image: url('../assets/img/noiseTextureBlue.png');
   background-repeat: repeat;
-  opacity: .32;
-  mix-blend-mode: overlay;
+  /* opacity: .32;
+  mix-blend-mode: overlay; */
   pointer-events: none;
 }
 

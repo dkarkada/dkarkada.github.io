@@ -2,6 +2,13 @@
   height: 224px;
 }
 
+@media (max-width:1023px){
+  .animContainer{
+    height: 140px;
+    margin:auto; 
+  }
+}
+
 .animCanvas {
   display: block;
   height: 224px;
@@ -9,4 +16,12 @@
   border-color: rgb(7, 4, 39);
   border-width: 3px;
   background:#4e4c42;
+}
+
+@media (max-width:1023px){
+  .animCanvas{
+    height: 128px;
+    border-radius: 50%;
+    margin:auto; 
+  }
 }
