@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dkarkada.xyz/sitemap-index.xml

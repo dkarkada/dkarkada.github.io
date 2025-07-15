@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet href="/feeds/rss-style.xsl" type="text/xsl"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Dhruva's dumb website</title>
+        <link>https://dkarkada.xyz/</link>
+        <description></description>
+        <lastBuildDate>Tue, 15 Jul 2025 06:09:46 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>Astro-Theme-Retypeset with Feed for Node.js</generator>
+        <language>en</language>
+        <copyright>Copyright © 2025 Dhruva Karkada</copyright>
+        <atom:link href="https://dkarkada.xyz/rss.xml" rel="self" type="application/rss+xml"/>
+        <item>
+            <title><![CDATA[[New paper] Solving the training dynamics of word2vec]]></title>
+            <link>https://dkarkada.xyz/posts/qwem/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/qwem/</guid>
+            <pubDate>Sat, 28 Jun 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[Word embedding models learn interpretable topic-level concepts one at a time.]]></description>
+            <content:encoded><![CDATA[<p>In my opinion, <code>word2vec</code> is such a cute lil guy. There's something so charming about his guileless simplicity. All he wants is to read some interesting text (say, all of Wikipedia) and learn some vectors, one for each word in the dictionary. And he does admirably well: by the end, each vector is laden with semantics. I want to know his secrets.</p>
+<h2>tldr</h2>
+<p>Paper link: <a href="https://arxiv.org/abs/2502.09863">Closed-Form Training Dynamics Reveal Learned Features and Linear Structure in Word2Vec-like Models.</a></p>
+<p>I (along with coauthors <a href="https://james-simon.github.io/">Jamie Simon</a>, <a href="https://sites.google.com/view/yasamanbahri/home">Yasaman Bahri</a>, and <a href="https://deweeselab.com/people/mike_deweese/index.html">Mike DeWeese</a>) figured out <em>what</em> <code>word2vec</code> learns, and <em>how</em> it learns it. In essence, there are realistic regimes in which the learning problem reduces to unweighted least-squares matrix factorization. We solve the gradient flow dynamics in closed form; the final representations are simply given by PCA.</p>
+<p>Here's a more detailed picture. Suppose we initialize all the embedding vectors randomly and very close to the origin, so that they're effectively zero-dimensional. Then (under some mild approximations) the embeddings collectively learn one "concept" (i.e., orthogonal linear subspace[^1]) at a time in a sequence of discrete learning steps. Since we intend for semantic relations between words to be represented in the angles between their embeddings, each new realized linear concept gives the word embeddings more space to better express themselves and their meanings.</p>
+<p>(It's like when I dive head-first into learning a new branch of math. At first, all the jargon is muddled in my mind -- what's the difference between a function and a functional? What about a linear operator vs. a matrix? Slowly, through exposure to new settings of interest, the words separate from each other in my mind and their true meanings become clearer.)</p>
+<p>Each of these linear concepts is just an eigenvector of a particular target matrix whose elements are determined solely by the corpus statistics and algorithmic hyperparameters. During learning, the model realizes these concepts as singular directions of the embedding matrix, each learned in a timescale determined by the spectrum of the target matrix. We derive this result under conditions that are very similar to those described in the original <code>word2vec</code> paper. In particular, <em>we don't make any distributional assumptions about the corpus statistics</em>. We empirically show that despite the slightly idealized setting, our theoretical result still provides a faithful description of OG <code>word2vec</code>.</p>
+<p>In my completely biased opinion, this result is a banger. Closed form solutions in the distribution-agnostic setting are rare and hard to obtain; to my knowledge, this is the first one for a natural language task.</p>
+<h2>Why study word2vec?</h2>
+<p><code>word2vec</code> is one of the first machine learning algorithms I ever learned about -- and I'm sure that's true for many other young machine learning researchers. The core idea is pretty straightforward. Start by assigning random $d$-dimensional vectors to each word in your dictionary. Then, as you iterate through the corpus, align the vectors for words that show up together in context windows. At the same time, counterbalance this with a generic, global repulsion between all embeddings. (The way <code>word2vec</code> actually aligns and repels embedding vectors is by evaluating pairwise inner products as logits and minimizing a cross-entropy-style objective function.) After iterating through the corpus a couple of times, the word vectors that show up together frequently should have high cosine similarity, and unrelated words should have low cosine similarity. The <a href="https://arxiv.org/abs/1310.4546">original algorithm</a> adds a lot of bells and whistles for increased computational throughput, but under the hood, the central idea is simply the contrastive algorithm I just described.</p>
+<p>Given its simplicity, you might flinch when I call the resulting embedding weights a modern language model. But it is. It's a feedforward (linear) network, it's trained by gradient descent in a self-supervised fashion, and it learns statistical regularities in natural language by iterating through text corpora. Hopefully, then, you can agree that understanding <code>word2vec</code> amounts to understanding feature learning in a minimal yet interesting language modelling task.[^2]</p>
+<h2>The result</h2>
+<p>I want to know what <code>word2vec</code> learns as a function of training time. This requires understanding exactly how the optimization dynamics of the word embedding task induce an interaction between the corpus' token distribution and the linear model architecture. Tall order!</p>
+<p>Before stating the result, I'll show a plot that illustrates what happens:</p>
+<p><img src="https://dkarkada.xyz/_astro/fig1.c8u1a3E7_Z23iPso.webp" alt="Learning dynamics of word2vec trained from small initialization. Left: we measure discrete, sequential, rank-incrementing learning steps in the weight matrix, each decreasing the loss. Right: we show three time slices of the latent embedding space (each corresponding to a gray line in left plot); embedding vectors expand into subspaces of increasing dimension at each learning step, which proceeds until model capacity is saturated." /></p>
+<p>The key empirical observation is that <code>word2vec</code>, when trained from small initialization, learns in a sequence of essentially discrete steps. At each step, the rank of the $d$-dimensional embeddings increments, and the point cloud of embeddings expands along a new orthogonal direction in the ambient space of dimension $d$. Furthermore, by inspecting the words that most strongly align with these singular directions, we observe that each discrete piece of knowledge corresponds to an interpretable topic-level "concept." This is striking behavior. It suggests that there may exist regimes or limits under which the dynamics become exactly solvable.</p>
+<p>This turns out to be precisely the case, under the following four approximations:</p>
+<ol>
+<li>quartic approximation of the objective function around the origin</li>
+<li>a particular constraint on the algorithmic hyperparameters (which is still close to the original <code>word2vec</code> implementation)</li>
+<li>sufficiently small initial embeddings</li>
+<li>vanishingly small GD step size.</li>
+</ol>
+<p>Then, the training dynamics become analytically tractable. What's more, the resulting dynamics are pretttty close to those of unmodified <code>word2vec</code> above. See for yourself:</p>
+<p><img src="https://dkarkada.xyz/_astro/fig2.C4kWlUSu_ZJTCeE.webp" alt="Same plot as above but with the extra approximations. The empirical curve is obtained by applying the first two, and the theoretical prediction requires all four assumptions." /></p>
+<p>Note that none of the approximations involve the data distribution! Indeed, a huge strength of the theory is that it makes no distributional assumptions. As a result, the theory predicts exactly what features are learned in terms of the corpus statistics and the algorithmic hyperparameters. Neat!!</p>
+<p>Ok, so what are the features? The answer is remarkably straightforward: the latent features are simply the top eigenvectors of the following matrix:</p>
+<p>$$
+\mathbf{M}^\star_{ij} = \frac{P(i,j) - P(i)P(j)}{\frac{1}{2}(P(i,j) + P(i)P(j))}
+$$</p>
+<p>where $i$ and $j$ index the words in the vocabulary, $P(i,j)$ is the co-occurrence probability for words $i$ and $j$, and $P(i)$ is the unigram probability for word $i$ (i.e., the marginal of $P(i,j)$). Constructing and diagonalizing this matrix from the Wikipedia statistics, one finds that the top eigenvector selects words associated with celebrity biographies, the second eigenvector selects words associated with government and municipal administration, the third is associated with geographical and cartographical descriptors, and so on.</p>
+<p>The takeaway is this: during training, <code>word2vec</code> finds a sequence of optimal low-rank approximations of $\mathbf{M}^\star$. It's effectively equivalent to running PCA on $\mathbf{M}^\star$. Let me emphasize again that (afaik) no one had ever provided such a fine-grained picture of the learning dynamics of <code>word2vec</code>.</p>
+<p>This is a really beautiful picture of learning. It almost feels too good to be true. So, a natural question is...</p>
+<h2>Is it too good to be true?</h2>
+<p>Nah. Our result really captures what's going on.</p>
+<p>You can get a sense just looking at the two plots above. The first two approximations essentially "untangle" the learning dynamics, making them analytically tractable. The core character of the learning remains. The final two assumptions are technical conveniences -- without them, I'd have to prove bounds on failure rates and approximation errors, and I don't know how to do that (nor do I want to).</p>
+<p>Importantly, it's not just the singular value dynamics that agree -- the singular vectors (which is arguably where all the semantics reside) match too. As evident in the plots above, concepts 1 and 3 are pretty much the same between original <code>word2vec</code> and our model; this close correspondence between concepts persists as learning proceeds. Check out our paper to see more plots illustrating this comparison.</p>
+<p>As a coarse indicator of the agreement between our approximate setting and true <code>word2vec</code>, we can compare the empirical scores on the standard analogy completion benchmark: <code>word2vec</code> achieves 68% accuracy, our model (computed directly via SVD of $\mathbf{M}^\star$) achieves 66%, and the standard classical alternative (known as PPMI) only gets 51%.</p>
+<h2>What do we learn about analogies?</h2>
+<p>To me, the most compelling reason to study feature learning in <code>word2vec</code> is because it is a toy model for the emergence of so-called <em>linear representations</em>: linear subspaces in embedding space that encode an interpretable concept such as gender, verb tense, or dialect. It is precisely these linear directions that enable the learned embeddings to complete analogies ("man : woman :: king : queen") via vector addition. Amazingly, <a href="https://arxiv.org/abs/2311.03658">LLMs exhibit this behavior</a> as well, and the phenomenon has recently garnered a lot of attention, since it enables <a href="https://arxiv.org/abs/2309.00941">semantic inspection of internal representations</a> and provides for <a href="https://arxiv.org/abs/2310.01405">novel model steering techniques</a>.</p>
+<p>In <code>word2vec</code>, one typically uses vector differences to probe these abstract representations. For example, $\vec w_\mathrm{man}-\vec w_\mathrm{woman}$ is a proxy for the concept of (binary) gender. We empirically show that the model internally builds task vectors in a sequence of noisy learning steps, and that the geometry of these vector differences is quite well-described by the spiked covariance model.[^3] To me, this is rather suggestive -- it signals that random matrix theory might be a useful language for understanding how abstract concepts are learned. In particular, we find that overparameterization can sometimes decrease the SNR associated with these abstract concepts, degrading the model's ability to cleanly resolve them. See the paper for more details.</p>
+<h2>Some final thoughts</h2>
+<p>Deep learning theory is really hard. To make progress, it's prudent to turn to simple models that we can analyze. Of course, there's an art to this -- the model shouldn't be so simple that it no longer captures the learning phenomena we care about.</p>
+<p>I believe that we succeeded in isolating and analyzing such a model of <code>word2vec</code>. To me, the resulting picture is rather pretty -- <code>word2vec</code> essentially <em>does</em> reduce to PCA, so long as the quadratic approximation is made at initialization rather than at the global minimizer.[^4] This attests to the importance of accounting for the influence of underparameterization on the optimization dynamics; it is <em>not</em> sufficient to solve the unconstrained minimizer and then blindly enforce the rank constraint via least-squares.</p>
+<p>It feels really apt that the (arguably) simplest self-supervised neural language model just reduces to the (arguably) simplest unsupervised algorithm. My feeling is that this hints at something deep and generic about learning dense representations via first-order self-supervised methods. Lots more work to be done!</p>
+<p>[^1]: One can debate whether it's appropriate to call these "concepts." I argue that they really are the model's fundamental concepts -- each is an independent unit of knowledge, and the latent representations are uniquely and fully specified by their relation to these concepts. All the latent geometry is scaffolded by these abstractions. It's icing on the cake that these abstractions happen to be interpretable as topics and subject areas.</p>
+<p>[^2]: To be clear, I use the word "understand" like a physicist: I'd like a quantitative and predictive theory describing <code>word2vec</code>'s learning process. No such theory previously existed.</p>
+<p>[^3]: This is a random matrix ensemble in which a low-rank signal (called a "spike") is hidden in a thicket of Gaussian noise. If the signal-to-noise ratio is large enough, the spectrum of the random matrix (asymptotically) retains a footprint of the signal, in the form of an outlier eigenvalue. In our case, the signal is the abstract concept of interest. Characterizing the semantic "noise" is a great avenue for future work!</p>
+<p>[^4]: Contrast this with embeddings constructed from the SVD of the PMI matrix. The PMI matrix is the <a href="https://papers.nips.cc/paper_files/paper/2014/hash/b78666971ceae55a8e87efb7cbfd9ad4-Abstract.html">global unconstrained loss minimizer</a>, but its least-squares embeddings are god-awful (and, importantly, they're different from the <code>word2vec</code> embeddings). This is the peril of ignoring the rank constraint til the end.</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[research papers]]></title>
+            <link>https://dkarkada.xyz/posts/research/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/research/</guid>
+            <pubDate>Sat, 04 Jan 2025 00:00:00 GMT</pubDate>
+            <content:encoded><![CDATA[<p>Here are some findings from the research I've worked on.</p>
+<h2>Training dynamics of word2vec</h2>
+<p><a href="https://arxiv.org/abs/2502.09863">Paper link.</a></p>
+<p>What do contrastive word embedding models (e.g., word2vec) learn, and how? Specifically, what is learned by a model of size $$d$$ after training time $$t$$? By analytically solving for its learning dynamics, we find that</p>
+<ul>
+<li>it learns one topic-level concept at a time until its capacity (latent dimension $$d$$) is saturated</li>
+<li>each concept is represented as an orthogonal direction in latent space</li>
+<li>each of these orthogonal concepts is learned essentially independentally from the others</li>
+<li>these orthogonal semantic directions (and their learning trajectory) can be <em>explicitly computed in closed form</em> from the corpus statistics (!!!)</li>
+<li>linear representations of abstract semantic concepts (e.g., binary gender) are constructed in a series of learning stages that trade off signal and noise. This process is well-described by quantities from random matrix theory</li>
+</ul>
+<p>In my completely biased opinion, this result is a banger. Closed form solutions in the distribution-free setting are rare and hard to obtain (in general, they're only known for some very idealized learning setups).</p>
+<p>Btw, why care about word2vec? I'll give three reasons:</p>
+<ol>
+<li>Theorists should build a repertoire of solved ML algorithms, even if they are relatively simple. (Think about the innumerable benefits studying the harmonic oscillator brought physics.)</li>
+<li>It's a simple and relevant natural language task that requires feature learning! Understanding word2vec gives us a concrete new view into the general phenomenon.</li>
+<li>LLMs exhibit behaviors directly analogous to word2vec. Perhaps most strikingly, LLMs often represent abstract semantic concepts as <em>linear subspaces</em> of the ambient latent space; this was famously first observed in word2vec, enabling word2vec embeddings to complete analogies such as <em>man : woman :: king : queen</em> via vector addition.</li>
+</ol>
+<p><img src="https://dkarkada.xyz/_astro/qwem.DKsZKTnB_19i1Oc.webp" alt="We compare the time course of learning in our simplified model (top) and OG word2vec (bottom), finding striking similarities in their training dynamics and learned representations. Our analytical solution for the optimization dynamics reveals discrete learning steps corresponding to stepwise decreases in the loss (top left). In latent space (right side plots), embedding vectors expand into subspaces of increasing dimension at each learning step. These learned features can be extracted from our theory in closed form given only the corpus statistics and hyperparameters. We provide lots of evidence that our simplified model is a faithful proxy for word2vec." /></p>
+<h2>More is better in modern ML</h2>
+<p><a href="https://arxiv.org/abs/2311.14646">Paper link.</a></p>
+<p>When are overparameterization and overfitting optimal? Both carry negative connotations classically -- many statistics textbooks warn against fitting very large models to relatively small datasets for fear of angering the overfitting demons and harming generalization. Out of spite, I trained a 25 million parameter ResNet on 50,000 images of CIFAR-10 and it generalized fine. What gives?</p>
+<p>To answer this, we provide a theory of generalization in random feature (RF) models. RF regression can be thought of as a finite-feature approximation of kernel ridge regression (KRR), so Jamie's technique is to essentially take the existing eigenframework describing generalization in KRR, and then introduce (and average over) a second source of stochasticity arising from the finite feature sampling randomness. From the resulting equations, it's not hard to show that adding more features never hurts (so long as the ridge regularization is properly tuned). An immediate consequence of this is that infinite overparameterization (i.e., KRR) is optimal (from a generalization perspective). I did a bunch of experiments validing the theory.</p>
+<p>So that takes care of the overparameterization question. What about regularization? Under what conditions is zero regularization (i.e., perfectly interpolating the training data) optimal? We give a necessary and sufficient condition in terms of the task difficulty (a.k.a. the <em>source condition</em>), the kernel spectral decay (a.k.a. the <em>capacity condition</em>), and the intrinsic noise level. I did several experiments showing that (convolutional) neural tangent kernels learning vision tasks (e.g., CIFAR-10, MNIST, SVHN) are in this regime in which interpolation is near-optimal.</p>
+<p><img src="https://dkarkada.xyz/_astro/moreisbetter.DQqdjEuK_Z1T5pe6.webp" alt="At optimal ridge, more features monotonically improves test performance. Train and test errors for RF regression closely match theory for both synthetic and natural data. Plots show traces with 256 training samples." /></p>
+<h2>Lazy (NTK) vs active (muP) training</h2>
+<p><a href="https://arxiv.org/abs/2404.19719">Paper link.</a></p>
+<p><a href="/posts/ntk-mup-tutorial/">Link to longer blog post.</a></p>
+<p>Theoretical analyses of overparameterized models have recently focused on studying very wide neural networks. I wrote this tutorial to try to present a clean and conceptually illustrative derivation of the following fact: in order to train wide networks effectively, there is only one degree of freedom in choosing hyperparameters such as the learning rate and the size of the initial weights. This degree of freedom controls the <em>activity</em> or <em>richness</em> of training behavior: at minimum, the wide network trains lazily like a kernel machine, and at maximum, it exhibits feature learning in the $$\mu$$P regime.</p>
+<p>The main argument goes like this. If we want training to go smoothly, the loss has to steadily decrease, each layer should feel the gradients equally, and each layer should contribute to the optimization. Quantifying these criteria mathematically provides constraints on the hyperparameters. Then I just solve the constraint problem. The result is the richness scale. As a nice serendipitous treat, the derivation (non-rigorously) recovers Greg Yang's <a href="https://arxiv.org/abs/2011.14522"><em>dynamical dichotomy theorem</em></a>.</p>
+<h2>Eigenlearning</h2>
+<p><a href="https://arxiv.org/abs/2110.03922">Paper link.</a></p>
+<p><a href="https://bair.berkeley.edu/blog/2021/10/25/eigenlearning/">External link to longer blog post.</a></p>
+<p>What is the generalization error of linear least-squares ridge regression? A shocking (to me) fact is that the answer to this question was not well-known until recently (2020 ish).</p>
+<p>Wait, but in Machine Learning 101, don't we solve for the estimator in closed form? Yes, but this closed form solution is <em>conditional</em> on the training sample; for a given training sample, we can then compute the generalization error. But what about the average-case behavior? This requires averaging over the data distribution, which turns out to be pretty tricky due to high-dimensional shenanigans. Previous works accomplished this data average using either tools from random matrix theory or replica calculations. Jamie and Maddie figured out how to do it with a simpler trick reminiscent of the cavity method, and the resulting equations are conceptually cleaner and easier to interpret than previous work. I tagged along the tail end of this project, contributing an experiment in which I show that our eigenlearning framework can explain the deep bootstrap phenomenon discovered in <a href="https://arxiv.org/abs/2010.08127">Nakkiran et al. 2020</a>.</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[about me]]></title>
+            <link>https://dkarkada.xyz/posts/about/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/about/</guid>
+            <pubDate>Sat, 04 Jan 2025 00:00:00 GMT</pubDate>
+            <content:encoded><![CDATA[<p>Hi, I'm Dhruva. I research learning dynamics and inductive bias in neural networks. I'm currently a physics grad student at UC Berkeley.</p>
+<h2>research</h2>
+<p>I'm broadly interested in the physics of (deep) learning. Here I'm using the term <em>physics</em> artistically rather than literally: in my search for analytical theories of deep learning, I value useful toy models, pragmatic approximations, illuminating limits, and convincing quantitative match with practical experiments.</p>
+<p>I'm especially curious about adaptive feature learning, since I (and many other researchers) believe that it's key to understanding why deep learning is more sample efficient than static-feature algorithms such as kernel ridge regression.</p>
+<h2>teaching</h2>
+<p>I really enjoy teaching -- it makes me feel in my element. I think sharing knowledge is dope. Early in my PhD I won the <a href="https://gsi.berkeley.edu/programs-services/award-programs/ogsi/">Outstanding Graduate Student Instructor Award</a> from the Physics department, as well as the selective <a href="https://gsi.berkeley.edu/programs-services/award-programs/teaching-effectiveness/">Teaching Effectiveness Award</a> from the university. You can read my essay for this award <a href="https://gsi.berkeley.edu/karkada-2022/">here</a>.</p>
+<p>Here's some anonymous student feedback I'm extremely proud of:</p>
+<ul>
+<li>Dhruva is really chill and relaxed and an easy person to talk to. He is very prepared for discussions and they are really helpful in learning the material. He seems to be good at physics and is always willing to help/explain in the best way that he can. He also tries to explain the basics of a concept at the start of a discussion, which will help a lot because some concepts are very murky during lecture. Always learned a lot after attending.</li>
+<li>Very approachable and open to being asked questions, has good mini–lectures, I found his jokes funny</li>
+<li>Dhruva is an excellent TA. He starts each discussion with a small presentation about topics covered in the professor's lecture and/or topics he believes important to cover. These are easily understandable and often are more useful than the lecture due to Dhruva's excellent teaching style. He listens to the students and encourages their participation as well as questions. He relates to students as people and always comes prepared, even when faced with family emergencies.
+preparation and organization, attitude toward students, responsiveness and accessibility</li>
+<li>Dhruva is very prepared and understands what students' are struggling on. He understands the subject well and is good at teaching.</li>
+<li>Dhruva is an incredible teacher, and sparked an interest in physics beyond the scope of this class everyday. He put our equations in perspective.</li>
+<li>Dhruva is very knowledgeable, creates his own questions that are interesting (questions could be made a little harder), and very effective in explaining the solutions. He comes to class prepared by having spent time creating and solving questions beforehand. Due to this preparedness, Dhruva is a very effective teacher. Dhruva is also receptive to feedback and enthusiastic.</li>
+<li>Dhruva is very organized. He conveniently keeps all the notes and discussion problems on one website. His notes are clear and concise and if/when he doesn't have the answer to a discussion problem, he can still solve and teach it on the spot. He changes the difficulty of the problems according to the needs of the students.</li>
+<li>Going to discussions with him was really helpful. As someone with hardly any physics background, he made the material easier to understand and would consistently be engaging. I honestly do not think I could have passed the class without him.</li>
+<li>I was a student of his, and he was able to present material excellently in conjunction with lecture to ensure that we as students was able to fully comprehend material taught and ensure our success on exams and test questions. He was really able to teach us through a student perspective. His discussion and lab sections were always insightful with creative and fun questions or jokes to lighten the mood on the often times dull topics. I would not skip his section!</li>
+</ul>
+<p>I was a Graduate Student Instructor for <a href="https://guide.berkeley.edu/courses/physics/">Physics 7A</a> in Fall '21, Spring '22, Summer '23, and Summer '24. I've also taught <a href="https://guide.berkeley.edu/courses/physics/">Physics C10</a> and <a href="https://guide.berkeley.edu/courses/physics/">Physics C21</a> several times. I'm currently the graduate representative of the Physics department's Major Curriculum Committee.</p>
+<h2>random facts</h2>
+<p>Some activities I enjoy:</p>
+<ul>
+<li>cooking for friends</li>
+<li>playing vibe chess</li>
+<li>messing around with software synthesizers (any Arturia Pigments fans in here?)</li>
+<li>observing plants, tending for plants, watercoloring still life (plants), going on long chill walks (to witness some plants, of course)</li>
+<li>doing flipturns in a pool (the swimming part in between is alright too I guess)</li>
+</ul>
+<p>Some bands and tv I enjoy:</p>
+<ul>
+<li>Parcels</li>
+<li>Khruangbin</li>
+<li>Men I Trust</li>
+<li>Jungle</li>
+<li>Dune 2021</li>
+<li>Princess Mononoke</li>
+<li>Arrival</li>
+<li>Andor</li>
+</ul>
+<p>Before moving to Berkeley, I studied physics, computer science, and astronomy at UT Austin (hook 'em).</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[what's that animation? ⇨]]></title>
+            <link>https://dkarkada.xyz/posts/anim/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/anim/</guid>
+            <pubDate>Sat, 04 Jan 2025 00:00:00 GMT</pubDate>
+            <content:encoded><![CDATA[<p>I did surgery on a deep neural network and recorded from three neurons while it was learning. I assigned each neuron to an RGB channel and created a composite animation. Sweep your mouse over it. I honestly can't believe how beautiful it is.</p>
+<p>Here are the details. I instantiated a fully connected tanh net (depth 20, width 50), initialized deep in the <a href="https://arxiv.org/abs/1606.05340">chaotic regime</a>. I constructed a synthetic target function from a random linear combination of orthogonal Hermite polynomials. I trained the neural network on this target function (GD + weight decay) for a couple hundred steps, and then cycled back to the initialization to make a loop. Each pixel in the animation corresponds to a coordinate in a 2D slice of input space. On a given pixel, the RGB values are the normalized postactivations from three neurons in layer 15.</p>
+<p>Getting the animation on the website was kinda annoying. The full animation is a bit too hefty to send on pageload. Instead, I performed a <a href="https://en.wikipedia.org/wiki/Discrete_cosine_transform">discrete cosine transform</a> on each frame and retained only the top 32*32 modes. Then, I send those coefficients over to you, and your browser does the inverse DCT to actually render the animation using some custom WebGPU code. (If you don't see the animation, it might be because your browser doesn't support WebGPU... in which case, get with the program.)</p>
+<p>Why DCT instead of FFT? It turns out that DCT avoids Gibbs phenomena (ringing effects at the edges) by simply including half-wavelength terms. These half wavelength terms account for discontinuities at the edge arising from periodic boundary conditions. This enables fast convergence to the true signal (which, for many natural images, is concentrated in the low-frequency modes). Nifty.</p>
+<p><em>This animation brought to you by LSD gang.</em></p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Lazy (NTK) and active (muP) training -- what gives?]]></title>
+            <link>https://dkarkada.xyz/posts/ntk-mup-tutorial/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/ntk-mup-tutorial/</guid>
+            <pubDate>Sun, 06 Oct 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[There's only one degree of freedom in choosing how hyperparameters scale with network width.]]></description>
+            <content:encoded><![CDATA[<p><a href="https://arxiv.org/abs/2404.19719">Paper link.</a></p>
+<p>A central theme of the modern machine learning paradigm is that larger neural networks achieve better performance. One particularly useful kind of largeness is the network <em>width</em>, i.e., the dimension of the hidden representations. To understand the learning mechanisms in wide networks, we should aim to first understand the limiting behavior -- what happens at infinite width? But training infinitely wide networks isn't a walk in the park -- infinity is a bit of a trickster, and we should be cautious around him.</p>
+<p>As it turns out, in order to train infinitely wide networks well, there's only <em>one</em> effective degree of freedom in choosing how to scale hyperparameters such as the learning rate and the size of the initial weights. This degree of freedom controls the <em>richness</em> of training behavior: at minimum, the wide network trains lazily like a kernel machine, and at maximum, it exhibits feature learning in the active $$\mu\mathrm{P}$$ regime. I recently wrote a review paper (see link above) giving a straightforward derivation of this fact. This paper was a product of my own effort to navigate the literature on wide networks, which I personally found unclear. In this blog post, I'll just cover the main ideas.</p>
+<h2>What's so tricky about infinite-width networks?</h2>
+<p>Feedforward (supervised) nets are relatively simple architectures: there's a forward pass, where predictive signal flows from input to output, and a backpropagating gradient, where error signal flows from output to input. Training models just consists of repeating this process a bunch of times with diverse data.[^1] These flows should neither blow up nor decay to zero over the course of the flow.</p>
+<p>The problem of vanishing or exploding gradients should be familiar to students of deep learning -- it's exactly the issue that incapacitated recurrent neural networks. Fundamentally, this was a problem of coordinating signal propagation in the presence of infinity (in that case, infinite depth). We have an analogous problem on our hands. How might we choose our model hyperparameters to ensure that signal flows well in both directions?</p>
+<h2>Formalizing the training desiderata</h2>
+<p>We need to be specific about exactly what we want. Let's use a concrete model: let's say, a simple MLP with some finite input and output dimension, and hidden dimensions which all go to infinity. We'll initialize each weight matrix i.i.d. Gaussian with some variance of our choosing. We'll choose the learning rate separately for each layer too. (This is not the standard way to train networks, but we'll need the extra hyperparameters.) What does it mean for signal to "flow well?"</p>
+<ol>
+<li>The magnitudes of the elements of each hidden representation should be width-independent (i.e., order-unity).</li>
+<li>After each SGD step, the change in the network outputs shouldn’t scale with the width. This ensures that the loss decreases at a width-independent rate.</li>
+<li>After each SGD step, each representation should update in a way that contributes to optimizing the loss.</li>
+<li>After each SGD step, a layer’s weight update should contribute non-negligibly to the following representation update. (I.e., a representation's update shouldn't be dominated by updates to the previous representation.)</li>
+</ol>
+<p>That's it. These desiderata constrain <em>almost</em> all the free hyperparameters -- after the dust settles, there's exactly one degree of freedom remaining, which controls the size of the updates to the hidden representations. For this reason, this degree of freedom is intimately tied with the model's ability to learn features from the data.</p>
+<p>Let's be specific now. Let's call this remaining degree of freedom the <em>activity</em>, $$\alpha \equiv \gamma n^r$$. I've already taken the liberty to factor the activity into a part that scales with the width $$n$$ (with scaling exponent $$r$$), and a prefactor $$\gamma$$ which doesn't.[^2] The signal propagation arguments in my review paper can only constrain the the scaling part, so I'll just set $$\gamma=1$$ hereforth.</p>
+<p>Actually, we can't just choose any $$\alpha$$. We're actually restricted to choose within $$0 \leq r \leq 1/2$$. This interval is what I called the <em>richness scale</em>; choosing the richness $$r$$ constitutes a hyperparameter choice which determines whether the model learns rich features. After choosing $$r$$, set your hyperparameters according to:</p>
+<p><img src="https://dkarkada.xyz/_astro/stp-gauge.DebZgcCv_1LPVDg.webp" alt="" /></p>
+<p>and you can be sure that all our training criteria are satisfied. Specfically, choosing $$r=0$$ is called <em>neural tangent parameterization</em> (NTP), and your network will train lazily in the kernel regime, where dynamics are linear and the model converges to the kernel regression predictor. On the other hand, choosing $$r=1/2$$ is called <em>maximal update parameterization</em> ($$\mu\mathrm{P}$$), and your network will train actively in the rich regime, where the model learns features from the data.</p>
+<p><img src="https://dkarkada.xyz/_astro/richness-scale.UebL2CSy_2nv1ln.webp" alt="" /></p>
+<p>At first blush, it seems incredible that you can satisfy all those desiderata <em>without</em> feature learning. How is it possible to train a network whose hidden representations evolve negligibly during training? This is one of infinity's greatest stunts -- in the infinite-width limit, lazy networks learn a task without ever adapting its hidden representations to the task! This is one of the major insights gained from studying the neural tangent kernel.</p>
+<p>But of course, our job as scientists is to develop theory that describes practical networks. So, we should focus our energy on understanding the rich regime.</p>
+<h2>Gauge symmetries and parameterizations galore</h2>
+<p>One last caveat -- the literature actually has a whole host of infinite-width parameterizations, most of which don't match the table above. For example, neither the <a href="https://arxiv.org/abs/1806.07572">original NTK paper</a> nor the <a href="https://arxiv.org/abs/2011.14522">$$\mu\mathrm{P}$$ paper</a> use layerwise learning rates. This seems to contradict the claim that there is only one degree of freedom in choosing hyperparameters. What's going on there?</p>
+<p>The explanation is very straightforward -- these other papers introduce extra (redundant) hyperparameters. By redundant, I mean that varying these new hyperparameters does not result in any new training dynamics. Behaviorally, there is still only one degree of freedom (the training richness). The only difference is that there are now multiple ways to scale your hyperparameters to achieve any desired training richness.</p>
+<p>This is exactly analogous to gauge symmetries in physics, where there are redundant degrees of freedom in a physical theory which have no experimentally observable consequences. I call the gauge in the table above "STP gauge." I call the gauge in the original NTK and $$\mu\mathrm{P}$$ papers "$$\mu\mathrm{P}$$ gauge." I call the gauge in <a href="https://arxiv.org/abs/2205.09653">Bordelon and Pehlevan 2023</a> "rescaling gauge." These gauges (and their endpoint parameterizations) can be nicely visualized in parameterization space, where the different directions correspond to different ways of scaling your hyperparameters with width. Only one direction (the richness axis) affects training behavior; the other directions are either gauge transformations (yielding behaviorally-equivalent parameterizations) or violate the desiderata (not depicted).</p>
+<p><img src="https://dkarkada.xyz/_astro/gauges.CsUHxqpU_20hv8n.webp" alt="" /></p>
+<p>See my <a href="https://arxiv.org/abs/2404.19719">review paper</a> for more details!</p>
+<p><img src="https://dkarkada.xyz/_astro/derivation.HIoQQ1kr_Z2f4ivd.webp" alt="A graphical overview of the calculation that gets us all the scalings." /></p>
+<p>[^1]: Contrast this with, e.g., Hopfield networks, which undergo a dynamical equilibration during inference. (Funnily enough, Hopfield nets just won the Nobel prize in physics.)</p>
+<p>[^2]: This already contradicts the notation I use in my review paper (oops sorry). I did this because the review paper borrows the notation in <a href="https://arxiv.org/abs/2205.09653">Bordelon and Pehlevan 2023</a>, whereas here I'm using the more recent notation from <a href="https://arxiv.org/abs/2410.04642">Atanasov et. al. 2024</a>.</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[How to take derivatives of matrix expressions]]></title>
+            <link>https://dkarkada.xyz/posts/matrix-derivative/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/matrix-derivative/</guid>
+            <pubDate>Thu, 19 Sep 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[Using einsums for pen-and-paper matrix differentiation]]></description>
+            <content:encoded><![CDATA[<p>I used to be really confused about how to take derivatives of (multi)linear algebra expressions with respect to vectors or matrices in those expressions. This kind of derivative is really common in machine learning. For example, consider the gradient descent update in linear regression. We need to compute the derivative of the square loss with respect to the weights:</p>
+<p>$$
+\frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\vert\vert\mathbf{W}^T\mathbf{X}-\mathbf{Y}\vert\vert^2\right)
+$$</p>
+<p>What's the right way to do this? Is there a recipe that works for arbitrary tensor expressions? Although one can find the recipes for derivatives of common matrix expressions <a href="https://en.wikipedia.org/wiki/Matrix_calculus#Identities">online</a>, here I'll explain a general systematic approach for calculating <em>any</em> tensor derivative, assuming no elementwise nonlinearities. At the end there'll be <a href="#exercises">exercises</a> so you can practice :)</p>
+<p>The trick is to use Einstein index notation. If you don't know what that is, read the <a href="#a-short-primer-on-tensor-contraction">next section</a> and then come back here. Right now, I'll just state the punchline.</p>
+<ol>
+<li>
+<p><strong>Write your tensor expression in Einstein notation.</strong> Here are the rules:</p>
+<ol>
+<li>Vectors have upper indices, so $$\mathbf{x}=x^\mu$$. Matrices have one upper and one lower index, with the upper index to the left of the lower, to indicate that the upper index contracts to the left and vice versa. (Think "upper index = row index" and "lower index = column index.") For example, $$\mathbf{M}={M^\mu}<em>\nu$$ and $$\mathbf{Mx}={M^\mu}</em>\nu x^\nu$$.</li>
+<li>A transpose switches the "up-ness" of all indices, so $$\mathbf{w}^T=w_\mu$$ and $$(\mathbf{AB})^T={A_\mu}^\nu{B_\nu}^\rho$$. (Conveniently, if you're careful about maintaining the left-right order of the indices on a given tensor, the order of the tensors themselves is irrelevant.[^1])</li>
+<li>Repeated indices, one on top one on bottom, indicate contraction over an axis, so $$\mathbf{w}^T\mathbf{x}=w_\mu x^\mu$$. Repeated indices, both on either top or bottom, indicate elementwise multiplication, and the index remains free, i.e., $$\mathbf{w}\odot\mathbf{x}=w^\mu x^\mu$$.</li>
+<li>A matrix trace is just a self-contraction, i.e. $$\mathrm{Tr},\mathbf{M}={M^\mu}_\mu$$. There are no free indices, telling us that tracing yields a scalar.</li>
+<li>Any Frobenius norm can be written $${\vert\vert\mathbf{M}\vert\vert}_F^2=\mathrm{Tr}[\mathbf{M}^T\mathbf{M}]$$.</li>
+</ol>
+</li>
+<li>
+<p><strong>Differentiate.</strong> The derivative of a tensor with respect to itself just yields Kronecker deltas for each pair of corresponding indices, with the indices up or down exactly as you'd expect. For example:</p>
+<p>$$
+\begin{align*}\mathrm{d}\mathbf{W}/\mathrm{d}\mathbf{W} &amp;= \mathrm{d}{W^\mu}<em>\nu/\mathrm{d}{W^\alpha}</em>\beta = \delta^\mu_\alpha \delta^\beta_\nu \newline \mathrm{d}(\mathbf{W}^T)/\mathrm{d}\mathbf{W} &amp;= \mathrm{d}{W_\mu}^\nu/\mathrm{d}{W^\alpha}<em>\beta = \delta</em>{\mu\alpha} \delta^{\nu\beta} \end{align*}
+$$</p>
+<p>where $$\delta$$ is the Kronecker delta. Apart from this, use the differentiation rules from scalar calculus.[^2]</p>
+</li>
+<li>
+<p><strong>Contract away all the Kronecker deltas.</strong> If possible, convert your expression back to matrix notation.</p>
+<ol>
+<li>Contracted indices are dummy indices, so their upness can be swapped at will. $$\mathbf{w}^T\mathbf{x}=w_\mu x^\mu=w^\mu x_\mu=\mathrm{Tr}[\mathbf{w}\mathbf{x}^T]=\mathbf{x}^T\mathbf{w}$$</li>
+<li>In matrix notation we rely on matrix multiplication convention to tell us which indices contract. Indices that contract from lower left to upper right represent matrix multiplication. For example, we should reorder $${A_\mu}^\nu{B_\nu}^\rho \to {B_\nu}^\rho {A_\mu}^\nu$$ so that $$(\mathbf{AB})^T=\mathbf{B}^T\mathbf{A}^T$$. In the special case that a scalar term contains a single pair of contracting indices that contract from upper left to lower right, we can write it as a trace, like the example above $$w^\mu x_\mu=\mathrm{Tr}[\mathbf{w}\mathbf{x}^T]$$ or $${W^\nu}<em>\mu{U^\mu}</em>\nu=\mathrm{Tr}[\mathbf{W}\mathbf{U}]$$.</li>
+<li>If you have tensor expressions which can't be written in terms of indices contracting from lower left to upper right (with the exception of scalars that can be written as a trace), it may not be possible to write it in matrix form. Einstein notation <em>generalizes</em> matrix notation.</li>
+</ol>
+</li>
+</ol>
+<h3>Example.</h3>
+<p>Let's do the example above: differentiate</p>
+<p>$$
+\frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\vert\vert\mathbf{W}^T\mathbf{X}-\mathbf{Y}\vert\vert^2\right).
+$$</p>
+<p>I'll spell out every step so it's easy to follow along, but of course when you're practiced it'll take far less effort to compute the derivative. First, we convert to index notation:</p>
+<p>$$
+\begin{align*}
+&amp;=\frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\mathrm{Tr}\left[(\mathbf{W}^T\mathbf{X}-\mathbf{Y})^T(\mathbf{W}^T\mathbf{X}-\mathbf{Y})\right]\right) \newline
+&amp;= \frac{\mathrm{d}}{\mathrm{d}{\mathbf{W}}}\left(\frac{1}{2N}\mathrm{Tr}\left[
+\mathbf{X}^T\mathbf{W}\mathbf{W}^T\mathbf{X} - \mathbf{Y}^T\mathbf{W}^T\mathbf{X} - \mathbf{X}^T\mathbf{W}\mathbf{Y} + \mathbf{Y}^T\mathbf{Y}\right]\right) \newline
+&amp;= \frac{\mathrm{d}}{\mathrm{d}{W^\alpha}<em>\beta}\left(\frac{1}{2N}\left({X</em>\mu}^\nu{W^\mu}<em>\sigma{W</em>\gamma}^\sigma{X^\gamma}<em>\nu - {Y</em>\sigma}^\nu{W_\gamma}^\sigma{X^\gamma}<em>\nu - {X</em>\mu}^\nu{W^\mu}<em>\sigma{Y^\sigma}</em>\nu + {Y_\sigma}^\nu{Y^\sigma}_\nu\right)\right)
+\end{align*}
+$$</p>
+<p>Then we differentiate and contract the Kronecker deltas:</p>
+<p>$$
+\begin{align*}
+&amp;=\frac{1}{2N}\left({X_\mu}^\nu{\delta^\mu_\alpha}{\delta^\beta_\sigma}{W_\gamma}^\sigma{X^\gamma}<em>\nu + {X</em>\mu}^\nu{W^\mu}<em>\sigma{\delta</em>{\alpha\gamma}}{\delta^{\beta\sigma}}{X^\gamma}_\nu \newline</p>
+<ul>
+<li>{Y_\sigma}^\nu{\delta_{\alpha\gamma}}{\delta^{\beta\sigma}}{X^\gamma}<em>\nu - {X</em>\mu}^\nu{\delta^\mu_\alpha}{\delta^\beta_\sigma}{Y^\sigma}<em>\nu + 0\right) \newline
+&amp;=\frac{1}{2N}\left({X</em>\alpha}^\nu{W_\gamma}^\beta{X^\gamma}<em>\nu + {X</em>\mu}^\nu{W^{\mu\beta}}{X_{\alpha\nu}} - {Y^{\beta\nu}}{X_{\alpha\nu}} - {X_\alpha}^\nu{Y^\beta}_\nu\right)
+\end{align*}
+$$</li>
+</ul>
+<p>The contracted indices are dummy indices, and their "upness" can be swapped freely. So the first term is equal to the second, and same for the third and fourth. Then I'll reorder the scalar factors in each term so that all the scalars so the indices contract from lower left to upper right, to make translation into matrix notation easy:</p>
+<p>$$
+\begin{align*}
+&amp;=\frac{1}{N}\left({W_\gamma}^\beta{X^\gamma}<em>\nu{X</em>\alpha}^\nu - {Y^\beta}<em>\nu{X</em>\alpha}^\nu\right) \newline
+&amp;=\frac{1}{N}(\mathbf{W}^T\mathbf{X}-\mathbf{Y})\mathbf{X}^T
+\end{align*}
+$$</p>
+<p>In retrospect, the answer is pretty intuitive — it looks like a direct application of the chain rule. You only need to check that the transposes are in the right places. It's easy in this case because the square loss is simple. But it's nice to have an unambiguous recipe for finding derivatives of arbitrary tensor expressions.</p>
+<h2>A short primer on tensor contraction.</h2>
+<p>A <em>tensor</em> combines vectors from different vectors spaces and produces a scalar. The number of vectors a given tensor needs in order to produce a scalar is called the tensor's <em>order</em>. For example, a scalar $$x\in\mathbb{R}$$ is an order-zero tensor. A vector $$\mathbf{x}\in\mathbb{R}^n$$ is an order-1 tensor: it combines with a single other vector to produce a scalar (via the dot product). A matrix $$\mathbf{M}\in\mathbb{R}^{m\times n}$$ is an order-2 tensor, which takes two vectors $$\mathbf{x}\in\mathbb{R}^n$$ and  $$\mathbf{y}\in\mathbb{R}^m$$ and produces a scalar $$\mathbf{y}^T\mathbf{M}\mathbf{x}$$. And so on for higher-order tensors.</p>
+<p>An order-$$n$$ tensor can be written as a rectangular prism of numbers with $$n$$ <em>axes</em>. Each axis acts on its own vector space. For example, a matrix $$\mathbf{M}$$ has two axes (the columns and rows), and they act on the column space and row space respectively.[^3] The elements along a given axis are enumerated by an <em>index</em>. So, an order-$$n$$ tensor will have $$n$$ different indices.</p>
+<p>The process by which tensors combine with other tensors or vectors is called contraction. Beloved examples of contractions include the dot product, any matrix multiplication, and the trace. Tensor contraction is a binary operation that "fuses" two axes together by summing pairwise products over the shared axis. For example,</p>
+<p>$$
+\mathbf{M}\mathbf{x}=\sum_j M_{ij}x_j
+$$</p>
+<p>is a single contraction. It fuses the shared axes between $$\mathbf{x}$$ and the row space of $$\mathbf{M}$$. Since $$\mathbf{M}$$ is an order-2 tensor, we need another contraction to get a scalar:</p>
+<p>$$
+\mathbf{y}^T\mathbf{M}\mathbf{x}=\sum_i (y_i\sum_j M_{ij}x_j)
+$$</p>
+<p>Tensors can only contract axes that share a vector space: if $$\mathbf{M}\in\mathbb{R}^{m\times n}$$ and $$\mathbf{v}\in\mathbb{R}^k$$, the contraction $$\mathbf{Mv}$$ is undefined.</p>
+<p><img src="https://dkarkada.xyz/_astro/contraction.D4I0q9Dk_28DRtx.webp" alt="How I imagine tensor contraction" /></p>
+<p>A contraction is a structure-reducing operation. I imagine that it's called "contraction" because it collapses large and unwieldy tensors towards structureless scalars. Because of their linearity, contractions are easily parallelizable, which is what gives modern GPUs a decisive computational advantage in computing tensor expressions.</p>
+<p>The insight of Einstein notation is that contraction is such a common operation that we should save ourselves the pain of writing out all the summation signs. We can <em>infer</em> a sum when indices are repeated. This is the same notation used in <code>np.einsum</code> and <code>torch.einsum</code>.</p>
+<p>$$
+\mathbf{M}\mathbf{x}=\sum_j M_{ij}x_j={M^\mu}_\nu x^\nu
+$$</p>
+<p>The other ingredient is that we distinguish two <em>types</em> of axes, which we denote by either upper or lower indices. This is equivalent to the distinction we make in matrix algebra between column vectors and row vectors (which we usually denoted with a transpose). In differential geometric terms, this is the distinction between contravariant and covariant vectors. Here are two key points to remember about this:</p>
+<ol>
+<li>It's important that contractions happen between a lower index and an upper index. After all, we write dot products as $$\mathbf{a}^T\mathbf{b}$$ and not as $$\mathbf{a}\mathbf{b}$$. This is consistent with the fact that the vector transpose (a.k.a. covector) is a linear functional: it contracts with vectors to produce scalars.</li>
+<li>The derivative w.r.t. a contravariant tensor is covariant, and vice versa. I remember this by thinking about a typical Taylor expansion, where derivatives contract directly with displacements: $$f(\mathbf{x}+d\mathbf{x}) \approx f(\mathbf{x}) + \nabla f(\mathbf{x})d\mathbf{x} + \cdots$$. Since $$d\mathbf{x}$$ and $$\mathbf{x}$$ are tensors of the same type, $$\nabla_\mathbf{x}$$ must contract with $$\mathbf{x}$$, implying that the indices in the derivative are all flipped.</li>
+</ol>
+<h2>Exercises.</h2>
+<ol>
+<li>Write these in Einstein notation. Then take the derivative with respect to $$\mathbf{x}$$. Also take the derivative with respect to $$\mathbf{W}$$ if present.
+<ol>
+<li>An outer product, $$\mathbf{x}\mathbf{x}^T$$</li>
+<li>A shallow linear network with vector input and scalar output, $$\mathbf{u}^T\mathbf{Wx}$$</li>
+<li>A deep linear network with vector input/output, $$\mathbf{f}(\mathbf{x};\mathbf{U,W,V})=\mathbf{UWVx}$$</li>
+<li>A scalar quadratic model, $$f(\mathbf{x};a,\mathbf{v},\mathbf{W}) = a + \mathbf{v}^T\mathbf{x}+\frac{1}{2}\mathbf{x}^T \mathbf{W} \mathbf{x}$$</li>
+<li>$$\mathrm{diag}(\mathbf{v})\mathbf{x}$$, where $$\mathrm{diag}(\mathbf{v})\in\mathbb{R}^{n\times n}$$ is the diagonal matrix with $$\mathbf{v}\in\mathbb{R}^n$$ on the diagonal.</li>
+<li>The linear Barlow Twins loss for self-supervised learning, $$\frac{1}{2}\vert\vert\sum_i^N\mathbf{Wx}_i(\mathbf{Wx}_i)^T-\mathbb{I}\vert\vert^2$$</li>
+</ol>
+</li>
+<li>Demonstrate the cyclic trace property, e.g., $$\mathrm{Tr}(\mathbf{ABC})=\mathrm{Tr}(\mathbf{BCA})=\mathrm{Tr}(\mathbf{CAB})$$, given the rules regarding Einstein summation. Extend the argument to a matrix product of any length. Show why arbitrary permutations within the matrix product aren't allowed.</li>
+<li>Consider input with spatial and channel axes (shape $$S\times C$$). A Conv1D layer (with no bias) convolves the spatial axis with $$C'$$ small filter stacks, each of height $$C$$. This produces a feature map of shape $$S'\times C'$$.
+<ol>
+<li>Write the 1D convolution operator in einstein notation. Hint: it's helpful to define a "patchify" operator, which is a linear tensor operator.</li>
+<li>Take the derivative of the feature map w.r.t. one of the filters.</li>
+</ol>
+</li>
+</ol>
+<p>[^1]: This is because a tensor product written in index notation is really a sum of scalar products, and scalars commute.</p>
+<p>[^2]: Remember to use different indices in the variable of differentiation from those in the expression; there's no contraction between the variable of differentiation and your expression.</p>
+<p>[^3]: Unfortunately, the nomenclature is pretty muddy. The term "axis" is used in math to refer to a particular direction in a vector space — that's very different from an axis of a tensor. What's worse, the "size" of a tensor axis is the dimension of the vector space that axis acts on, but PyTorch uses "dimensions" to refer to the axes themselves. This ambiguity is avoided in NumPy, which uses the kwarg "axis" to refer to an axis. Both NumPy and PyTorch use attribute "shape" to refer to the sizes of each axis (i.e., the geometric dimension of each corresponding vector space).</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Quick n dirty derivation of Larmor radiation and gravitational waves]]></title>
+            <link>https://dkarkada.xyz/posts/larmor/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/larmor/</guid>
+            <pubDate>Sat, 31 Aug 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[How to derive order-of-magnitude expressions for radiation formulas]]></description>
+            <content:encoded><![CDATA[<p>In this blog post, I’ll give back-of-the-envelope derivations for the power radiated by electric dipoles (Larmor radiation) and orbiting black holes (gravitational waves). We’ll also be able to see very plainly that the power emitted by a black hole binary right before it merges is independent of the black hole masses: black-hole mergers are standard sirens.</p>
+<p>Let’s focus on the electromagnetic case first. The energy density of the field is something like $$\varepsilon\sim E^2/k$$ where $$k$$ is the Coulomb constant and $$E$$ is the electric field. (This comes from Poynting’s theorem.) I’ve dropped factors like $$4\pi$$ because they are annoying and I don’t care about them.</p>
+<p>Charge is conserved. Let’s for a moment pretend it’s not. Like a syringe squeezing a big water droplet onto a penny, let’s imagine procuring a charge $$q$$ at some point in space over the course of some time interval $$\Delta t$$. Where there was once no electric field, there are now field lines emanating from the charge. Information about the procurement of the charge propagates outwards at light speed $$c$$, so the electric field lines fill a "bubble" of radius $$c\Delta t$$.  The average field strength in this bubble is something like $$E\sim kq/(c\Delta t)^2$$. The energy inside the bubble is then $$U\sim (E^2/k)(c\Delta t)^3=k q^2/(c\Delta t)$$ which checks out dimensionally.</p>
+<p><img src="https://dkarkada.xyz/_astro/electron.DdHcSfn8_Zt1Q4E.webp" alt="Oscillating a single charge, conservation laws be damned" /></p>
+<p>Now let’s imagine slowly disappearing the charge and repeating this cycle over and over. We now have a characteristic timescale: the reciprocal of the oscillation frequency, $$\Delta t\sim \omega^{-1}$$. The power (energy per unit time) emitted by this electric monopole is then</p>
+<p>$$
+P_\mathrm{monopole}\sim k q^2c^{-1}\omega^2.
+$$</p>
+<p>But this is so silly. We can’t simply procure charge — charge is conserved. What we CAN do is mask a positive charge with a negative charge, to effectively make it disappear. By oscillating these two charges against each other, we get an oscillating dipole moment without violating charge conservation. Just as before, the energy of the radiation goes like the field strength squared. But now we have to keep track of the field produced by <em>both</em> charges, which interfere with each other. This interference makes the dipole field much weaker than the monopole field.  How much weaker? To calculate this interference correction, we’ll use a heuristic argument: far enough from the dipole, the radiation should look like the sum of two opposite monopole waves, displaced from each other by the dipole separation $$d$$. Here's an animation[^1] depicting this:</p>
+<p><img src="https://dkarkada.xyz/_astro/dipole.BUoB0XJa_165LEh.webp" alt="Challenge: can you argue why the dipole radiation pattern looks like two fixed oscillating monopole patterns? Remember that, in the far field, the field configuration only depends on the dipole moment." /></p>
+<p>The spatial part of the superposed monopole waves goes like</p>
+<p>$$
+\begin{aligned}
+e^{-i\omega x/c}-e^{-i\omega(x+d)/c}&amp;=e^{-i\omega x/c}(1-e^{-i\omega d/c}) \ &amp;\approx e^{-i\omega x/c}(1-1+i\omega d/c)\
+&amp;= i(\omega d/c) e^{-i\omega x/c}
+\end{aligned}
+$$</p>
+<p>where I used the dispersion relation for light $$2\pi/\lambda=\omega/c$$. I also used a Taylor expansion since I’m assuming that $$d$$ is much smaller than the wavelength. The energy in a wave goes like the amplitude squared, which tells us that the power radiated by a dipole is damped by a factor of $$(\omega d/c)^2$$ compared to the power from the winking monopole, due to interference. This is the last ingredient we need to get the power radiated by an electric dipole:</p>
+<p>$$
+P_\mathrm{dipole}\sim (\omega d/c)^2 P_\mathrm{monopole} = k (qd)^2 \omega^4 c^{-3}
+$$</p>
+<p>Compare this to the exact answer given by Larmor’s formula:</p>
+<p>$$
+P_\mathrm{Larmor}=\frac{1}{3} k (qd)^2 \omega^4 c^{-3}
+$$</p>
+<p>Our stupid hacky derivation gets all the scaling right — we only miss the order-unity numerical factor.</p>
+<p>Great news: we can apply the same analysis to gravitational waves, if we’re willing to make some extra logical jumps. The proportionality constant is now $$G$$ and the charges are now masses. The oscillation frequency is no longer a free parameter; it’s fixed by mechanics[^3] as $$\omega^2 = 2Gmd^{-3}$$. It turns out that the energy density in the gravitational field is analogous to that of the electric field, in that it goes like the squared field strength.[^4] The most important difference, though, is that not only is mass conserved (no monopole radiation), mass is also strictly non-negative. So, by symmetry, there can be no dipole moment. Gravitational radiation is in fact quadrupole radiation, which suffers an <em>extra</em> interference damping factor. So, modifying the same equation as before, the power in gravitational waves is</p>
+<p>$$
+P_\mathrm{quad}\sim (\omega d/c)^4 Gm^2c^{-1}\omega^2 = G^4m^5 d^{-5}c^{-5}
+$$</p>
+<p>Compare with the true formula:</p>
+<p>$$
+P_\mathrm{grav} = \frac{64}{5}G^4m^5 d^{-5}c^{-5}
+$$</p>
+<p>Again we’re off by some numerical factor but the scaling is all correct.</p>
+<p>The power emitted from a merging black hole binary is independent of the masses. This is because they coalesce roughly when their event horizons overlap, i.e., $$d\sim R_\text{Schwarzschild}=2Gm/c^2$$. Plugging this in, we get</p>
+<p>$$
+P_\text{merger} \sim c^5 G^{-1}
+$$</p>
+<p>which is a truly insane amount of power -- in the ballpark of $$10^{50}$$ Watts, more than the combined luminosity of all the stars in the universe. Since the power emitted depends only on universal constants, black hole mergers are "standard sirens" -- we can exploit the inverse-square law to determine the distance to the merger. Here’s a cool animation.[^2]</p>
+<p><img src="https://dkarkada.xyz/_astro/gravwave.BIz7y4C__Z23ITiK.webp" alt="Dipole" /></p>
+<p>Much of this derivation was taught to me by Eugene Chiang, and I thought it was a really cool and easy way to re-derive some radiation formulas.</p>
+<p>[^1]: <a href="https://www.en.didaktik.physik.uni-muenchen.de/multimedia/dipolstrahlung/animated-gifs-aus-bildern/index.html">Inlay animation</a>
+[^2]: <a href="https://www.ligo.caltech.edu/video/ligo20160615v1">Gravitational wave animation</a>
+[^3]: I’m assuming here that the masses are equal for simplicity; breaking this assumption just introduces numerical factors, which I already said I don’t care about.
+[^4]: It’s probably because they’re both inverse-square laws, but I’m not sure tbh.</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Statistical physics of signal propagation in deep neural networks]]></title>
+            <link>https://dkarkada.xyz/posts/critical-signalprop-nn/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/critical-signalprop-nn/</guid>
+            <pubDate>Wed, 07 Dec 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[Using statistical physics to understand what makes a good activation function]]></description>
+            <content:encoded><![CDATA[<p>$$
+\newcommand{\E}[1]{\left\langle#1\right\rangle}
+$$</p>
+<p>Here I've summarized some of the main ideas that underlie the theory of signal propagation in deep neural networks. This theory, which is strongly inspired by the physics of statistical field theory, explains the success of ReLU as an activation function for deep networks and also predicts that the Kaiming initialization scheme is optimal. I wrote this as a final report for a course on critical phenomena in equilibrium and nonequilibrium systems. I hope it's informative!</p>
+<h2>Introduction</h2>
+<p>In machine learning, we are interested in learning patterns in data. In regression problems, we focus on learning a function that uses data (e.g. a digital image) to predict properties of the data (e.g. whether the image contains a cat). To do this, we use a general-purpose function approximator: a neural network. A neural network (NN) parameterizes a family of functions by stacking <em>layers</em> of interleaved affine transformations and element-wise nonlinear transformations. For example,</p>
+<p>$$
+f(\vec{x}) = \boldsymbol{A}^{(L)} \phi \boldsymbol{A}^{(L-1)}\phi\dots \phi \boldsymbol{A}^{(1)} \vec{x}
+$$</p>
+<p>where $$f(\vec{x})$$ is the NN output on input $$\vec{x}$$ and the $$\boldsymbol{A}^{(\ell)}$$ are affine transformations each defined by tunable (i.e. trainable) parameters. The index $$\ell$$ enumerates the layers, $$L$$ is the <em>depth</em> of the neural network, and $$\phi(x_i)$$ is a nonlinear scalar function which acts element-wise on a vector. Choosing $$L$$ and $$\phi$$ is a design decision made a priori. When we train this NN, we tune its affine parameters to search the family of functions for a specific function that well-approximates the true pattern in the data. Training is computationally expensive, so we would like to use theoretical principles to guide design decisions and maximize performance.</p>
+<p>Unfortunately, we lack a complete theory that predicts the final performance of a given NN before actually training it. The fundamental difficulty is that neural networks may have billions of parameters whose training dynamics are coupled. This justifies using tools from statistical physics to uncover the basic behaviors and properties of these large-scale systems. In fact, mean field theory, partition functions, replica calculations, phase transitions, and more have become standard in NN theory, reflecting a long history of contributions from statistical physicists to NN theory (<a href="https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745">Bahri et al. 2020</a>).</p>
+<p>In the past decade, practitioners have provided evidence that deeper neural networks a) perform better, but b) are more challenging to optimize. Subsequent work empirically found that a particular choice of $$\phi$$ known as ReLU helped alleviate the optimization challenge of deep neural networks (<a href="https://arxiv.org/abs/1502.01852">He et al. 2015</a>). All of these observations lacked theoretical explanations for many years. In this report, I will summarize recent results that use statistical field theory to convincingly explain these phenomena.</p>
+<h2>Field theory of neural networks</h2>
+<p>In a trained neural network, we expect that two input vectors that are semantically similar (e.g. that both are images of cats) should be pushed towards each other as the input propagates through the network. In this sense, the role of a neural network is to extract semantic structure from the relevant data, which is typically some complicated submanifold in input space (i.e. a 'typical' random vector in image space is just noise; we only care about the manifold of 'natural' images).</p>
+<p>Of course, the way an input is transformed through the network depends on the affine parameters. While the optimization algorithm provides the dynamical equation for the parameters, we must also specify the initial conditions. In practice, affine parameters are initialized i.i.d. Gaussian as</p>
+<p>$$
+W^{(\ell)}_{ij}\sim \mathcal{N}(0, \sigma_w^2/N) \quad\mathrm{and}\quad b^{(\ell)}_i \sim \mathcal{N}(0, \sigma_b^2)
+$$</p>
+<p>where $$\boldsymbol{A}^{(\ell)}(\vec{v})=\boldsymbol{W}^{(\ell)}\vec{v}+\vec{b}^{(\ell)}$$ and $$N$$ is the dimension of the affine input. The parameter variances $$\sigma_b^2$$ and $$\sigma_w^2$$ must be chosen carefully a priori; <a href="https://arxiv.org/abs/1502.01852">He et al. (2015)</a> suggest choosing $$\sigma_w^2=2$$, which is now standard due to its empirical success. Now, as in statistical physics, we study the resulting ensemble of neural networks. In particular, we characterize a neural network's manipulation of the data manifold by studying the inner product between two arbitrary inputs as they are processed layer-by-layer:</p>
+<p>$$
+\newcommand{\E}[1]{\left\langle#1\right\rangle}
+G_{i}^{(\ell)}(\vec{x}, \vec{x}') := \E{z_i^{(\ell)}(\vec{x}) z_i^{(\ell)}(\vec{x}')}
+$$</p>
+<p>where $$\vec{z}^{(\ell)}(x)$$ is the output[^1] of layer $$\ell$$ on input $$x$$, and $$i$$ is a vector component index (dropped later for clarity). The expectation is over the network ensemble. The quantity $$G$$ characterizes the changing geometry of the data manifold as it propagates through the network ensemble.</p>
+<p>Note that $$G$$ is precisely the two-point correlator of layer outputs (<a href="https://doi.org/10.1017/CBO9780511815881">Kardar 2007</a>). So, we can restate our goal as characterizing the correlator's flow from layer to layer. If we want neural networks to preserve important structural information about the input as it flows to deep layers, then we must ensure that the correlator is flow-invariant: in other words, we need to initialize the NN at criticality, so that $$G^{(\ell)}\sim G^{(0)}$$ for all $$\ell$$. A very deep network initialized far from criticality will yield outputs uncorrelated to the input, and the optimization algorithm will therefore fail (<a href="https://arxiv.org/abs/1611.01232">Schoenholz et al. 2016</a>).</p>
+<p>However, a major challenge remains. Although the first-layer "field" $$z_i^{(1)}$$ is Gaussian-distributed, as $$z_i^{(\ell)}$$ flows along increasing $$\ell$$, its ensemble distribution increasingly deviates from Gaussianity[^2]. This makes theoretical analysis intractable (<a href="https://arxiv.org/abs/2106.10165">Roberts, Yaida, and Hanin 2022</a>). To circumvent this, we take the "infinite-width limit": we take the dimension of the codomains of all $$\boldsymbol{A}^{(\ell&lt;L)}$$ to infinity, so that all the $$\vec{z}^{(\ell&lt;L)}$$ are infinite-dimensional. It turns out that ensemble fluctuations of the correlator vanish in this limit. In this mean-field limit, the output fields $$z_i^{(\ell)}$$ are zero-mean Gaussian random fields and are thus fully characterized by the correlator $$G^{(\ell)}$$.</p>
+<p>This field-theoretic framework allows us to theoretically compute the correlator for a variety of choices of $$\phi$$, provides a criterion for criticality, and relates these to the geometry of the data manifold and the trainability of the NN.</p>
+<p>[^1]: This is the output just before the nonlinearity is applied.
+[^2]: The non-Gaussianity originates from "interactions" between field components that breaks their statistical independence.</p>
+<h2>Criticality analysis</h2>
+<p>For a NN to be initialized at criticality, we need the correlator to approach a nontrivial fixed point $$\lim_{\ell\to\infty}G^{(\ell)}=G^*$$. This will depend on the choice of the nonlinearity $$\phi$$ as well as the initial parameter variances $$\sigma_b^2$$ and $$\sigma_w^2$$. In the infinite-width (mean-field) limit, we obtain the recursive flow relation</p>
+<p>$$
+\newcommand{\E}[1]{\left\langle#1\right\rangle}
+G^{(\ell+1)}(\vec{x}<em>+, \vec{x}</em>-) =\sigma_b^2 + \sigma_w^2\E{\phi(z_+^{(\ell)}) \phi(z_-^{(\ell)})}
+$$</p>
+<p>where the expectation is tractable in the mean-field limit since it depends only on $$G^{(\ell)}$$.</p>
+<p><a href="https://arxiv.org/abs/2106.10165">Roberts, Yaida, and Hanin (2022)</a> use perturbative techniques to compute the fixed point $$G^*$$ for nonlinearities obeying $$\phi(\lambda x)=\lambda\phi(x)$$, which include the ubiquitous $$\mathrm{ReLU}(x)=\max(0,x)$$. By linearizing the flow equation around the degenerate limit where both inputs coincide identically, i.e. $$x_\pm = x_0\pm\frac{1}{2}\delta x$$, they find a flow in the correlator perturbation, which can be solved to low order in the perturbation. For $$\mathrm{ReLU}$$:</p>
+<p>$$
+(G+\delta G)^{(\ell+1)} = \sigma_b^2+\frac{1}{2}\sigma_w^2(G+\delta G)^{(\ell)}
+$$</p>
+<p>which has a fixed point at $$(\sigma_b^2, \sigma_w^2)=(0, 2)$$. The theory also predicts a semi-critical fixed line at $$\sigma_b^2&gt;0$$ and $$\sigma_w^2=2$$, where the total correlator increases linearly but the correlator perturbations are at a fixed point. If the NN is initialized on a (semi)critical point, information about the geometric structure of the data can propagate through arbitrarily deep networks without exponentially vanishing or blowing up. As a result, these initialization schemes greatly enhance the trainability of very deep networks, which is exactly what is observed in practice:</p>
+<p><img src="https://dkarkada.xyz/_astro/statphys-nn-phasediagram.AVmNh0Z1_2ltM85.webp" alt="Post-training performance on the MNIST dataset for ReLU networks, as a function of hyperparameters. As depth increases, criticality increasingly determines trainability, and the semicritical phase boundary becomes apparent. Figure adapted from Lee et al. 2017." /></p>
+<p>We can use this formalism to repeat this calculation for other choices of nonlinearity $$\phi$$. The result is that there exists a broad class of $$\phi$$ which do not permit a fixed point. Deep networks with these nonlinearities are not trainable. The takeaway is that the theory predicts both the unique success of $$\mathrm{ReLU}$$ as well as the Kaiming initialization scheme ($$\sigma^2_w=2$$) which is  widely used in practice.</p>
+<h2>Future directions</h2>
+<p>Do NNs far from the mean-field limit behave qualitatively differently? Can the field theory framework handle task-specific NN architectures where the affine transforms may have additional structure? Can we go beyond initialization and make quantitative, data-dependent predictions about training dynamics? The field theory formalism presented here is one of many frameworks used to approach the slew of open questions remaining in NN theory. Rapid engineering improvements only deepen the gap between theory and practice; it will take a coherent synthesis of varying perspectives to develop a complete theory of deep learning.</p>
+<h2>References</h2>
+<ol>
+<li><a href="https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745">Bahri, Yasaman et al. (2020). “Statistical mechanics of deep learning”. In: <em>Annual Review of Condensed Matter Physics</em> 11.1.</a></li>
+<li><a href="https://arxiv.org/abs/1502.01852">He, Kaiming et al. (2015). “Delving deep into rectifiers: Surpassing human-level performance on imagenet classification”. In: <em>Proceedings of the IEEE international conference on computer vision</em>, pp. 1026–1034.</a></li>
+<li><a href="https://doi.org/10.1017/CBO9780511815881">Kardar, Mehran (2007). <em>Statistical physics of fields</em>. Cambridge University Press.</a></li>
+<li><a href="https://arxiv.org/abs/1611.01232">Schoenholz, Samuel S et al. (2016). “Deep information propagation”. In: <em>arXiv preprint arXiv:1611.01232</em>.</a></li>
+<li><a href="https://arxiv.org/abs/2106.10165">Roberts, Daniel A, Sho Yaida, and Boris Hanin (2022). <em>The Principles of Deep Learning Theory: An Effective Theory Approach to Understanding Neural Networks</em>. Cambridge University Press.</a></li>
+<li><a href="https://arxiv.org/abs/1711.00165">Lee, Jaehoon et al. (2017). “Deep neural networks as gaussian processes”. In: <em>arXiv preprint arXiv:1711.00165</em>.</a></li>
+</ol>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Detecting and tracking structures in protostellar outflows]]></title>
+            <link>https://dkarkada.xyz/posts/ugrad-thesis/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/ugrad-thesis/</guid>
+            <pubDate>Sun, 06 Jun 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[My senior thesis won an award]]></description>
+            <content:encoded><![CDATA[<p>My senior thesis recently was announced as the runner-up for the Best Honors Thesis award for the computer science department! This was work conducted with Prof. Stella Offner, who studies star formation. Stella was my primary research for most of my undergraduate research career. I've learned a lot by working with her, and I can't thank her enough!</p>
+<p>My thesis describes a new algorithm I developed for automatically tracking gas substructures in protostellar outflows. When a star is forming, it accretes gas from its environment; this accretion typically occurs on an equatorial disk (due to the conserved angular momentum of the system and dissipative forces within the gas). Due to magnetic effects, this accretion produces <em>outflows</em> which are uneven jets of gas that are ejected from the protostar's poles. These outflows are typically emitted in discrete <em>bullets</em>, which feed back into the stellar environment and have downstream feedback effects for the accretion processes. In particular, these feedback processes effect the final mass of the star, which in turn determines all other stellar properties of interest.</p>
+<p>On the left is a video showing these polar outflows in a simulation of a protostellar region. On the right are the results of my algorithm, tracking these separate outflow structures through time and accounting for bullets merging.</p>
+<p><img src="https://dkarkada.xyz/_astro/outflow-sim.D9G5S7mO_ZGPx6R.webp" alt="Simulation output" /></p>
+<p><img src="https://dkarkada.xyz/_astro/outflow-track.D3frIPpn_Ep1Tv.webp" alt="Tracking algorithm" /></p>
+<p>My goal was to develop an algorithm that can automatically detect and quantify the bullets you see in the video. Unfortunately, unsupervised multi-target tracking algorithms do not exist. In addition, even the supervised trajectory-finding algorithms often use discrete optimization, which makes it difficult to apply the laws of physics. I developed a <em>continuous</em> optimization technique which enforces momentum conservation and mass conservation to automatically track these outflows. You can read more about it in my thesis <a href="/assets/pdf/undergrad-thesis.pdf">here</a>.</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Science Olympiad resources]]></title>
+            <link>https://dkarkada.xyz/posts/scioly-resources/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/scioly-resources/</guid>
+            <pubDate>Sat, 25 Jan 2020 00:00:00 GMT</pubDate>
+            <description><![CDATA[All exams/solutions/tutorials I've made for science olympiad]]></description>
+            <content:encoded><![CDATA[<h3>MIT Invitational Jan 2020</h3>
+<p>Here are the exam materials for the Astronomy C exam, which was written by Asher Noel, Antonio Frigo, <a href="https://somewhatoverwhelmed.wordpress.com/">Aditya Shah</a>, and me. Teams performed about as expected with this difficult exam, with the mean score being 42 (out of 118) with a standard deviation of 18. Teams did pretty well on the multiple choice questions (mean score 27.5/40), but found the free response far less accessible (mean scores 5.5/30 and 9/48 for sections B and C respectively).</p>
+<p>This exam was pretty challenging, but I'm glad that teams were able to rise to it. The co-ES's and I struggled to find the proper balance in writing an exam that was challenging for top teams but not wholly discouraging for newer competitors. This is the result: an exam with a fairly straightforward section A, a challenging section B, and a much more difficult section C. Most teams attempted the JS9 questions, and many teams got credit. Hopefully this question offers more practice material. We emphasized cosmology pretty heavily in this exam -- understanding dark energy ($$\Lambda$$), cosmic microwave background, early structure formation, and how the expansion of the universe (i.e. scale factor) affects those. Unfortunately, there aren't many good online resources for cosmology, making it tricky to learn. Hopefully this exam gives a good starting point. For the dedicated learner, Ryden's <em>Introduction to Cosmology</em> is the standard undergraduate text, but that's probably overkill for scioly purposes. I'd recommend starting on Wikipedia's article on <a href="https://en.wikipedia.org/wiki/Physical_cosmology">physical cosmology</a> and seeing where that takes you.</p>
+<ul>
+<li><a href="/assets/pdf/scioly/mit20-astro-exam.pdf">Exam</a></li>
+<li><a href="/assets/pdf/scioly/mit20-image-sheet.pdf">Image Sheet</a></li>
+<li><a href="/assets/pdf/scioly/mit20-lens.fits">FITS file</a></li>
+<li><a href="/assets/pdf/scioly/mit20-astro-key.pdf">Key</a></li>
+<li><a href="/assets/pdf/scioly/mit20-walkthrough.pdf">FRQ Walkthrough</a></li>
+</ul>
+<h3>UT Invitational Oct 2019</h3>
+<p>For the first time in Astronomy C history, we've run the event with live Js9! :)</p>
+<p>This year, I made the exam significantly easier. As a result, teams did pretty well on it; one team got close to a perfect score. According to a feedback form, the difficulty and length of the exam was about right for most teams. Keep in mind that more than 50% of competitors responded that they were first-time competitors in astronomy.</p>
+<ul>
+<li><a href="/assets/pdf/scioly/utinv19-astro-exam.pdf">Astronomy C EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utinv19-astro-key.pdf">Astronomy C KEY</a></li>
+<li><a href="/assets/pdf/scioly/utinv19-astro-mystery.fits">mystery.fits</a></li>
+<li><a href="/assets/pdf/scioly/utinv19-ds-exam.pdf">Data Science C EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utinv19-ds-key.pdf">Data Science C KEY</a></li>
+<li><a href="/assets/pdf/scioly/utinv19-ds-chal.ipynb">Data Science C CHALLENGES</a></li>
+<li><a href="/assets/pdf/scioly/utinv19-ds-chal-sol.ipynb">Data Science C CHALLENGES KEY</a></li>
+</ul>
+<hr />
+<h3>UT Regional Mar 2019</h3>
+<p>I finally trialled my computer science event: Algorithm Design! It's a python-based event that emphasizes both theoretical and practical programming knowledge. The topics include Python syntax, basic programming concepts, Object oriented design, data structures, and the time and space complexity of operations/algorithms on those data structures. Teams are expected to complete both a written test, as well as write code (in a real IDE!) to solve coding challenges. Here are the event materials, minus the coding challenges.</p>
+<ul>
+<li><a href="/assets/pdf/scioly/utreg19-astro-exam.pdf">Astronomy C EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utreg19-astro-key.pdf">Astronomy C KEY</a></li>
+<li><a href="/assets/pdf/scioly/utreg19-algo-rules.pdf">Algorithm Design C RULES</a></li>
+<li><a href="/assets/pdf/scioly/utreg19-algo-exam.pdf">Algorithm Design C EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utreg19-algo-key.pdf">Algorithm Design C KEY</a></li>
+</ul>
+<h3>MIT Invitational Jan 2019</h3>
+<p>This year I had the pleasure of supervising at the renowned MIT invitational (along with Donna and Aditya), where we got to see many talented teams from across the country compete. This year's exam was, in my opinion, at least an order of magnitude harder than last year's. This resulted in generally low scores across the board. In addition to the objective difficulty, the exam was also long. This meant that performing well was a matter of good (lucky?) time management as much as it was about actual skill. In my opinion, that's not how an exam should be, and it's my bad for underestimating the difficulty and length of the exam. It's also only mid-season, so teams are not as prepared as they will be when they compete at state/nationals.</p>
+<p>I do think that this exam can be used as a good guide to studying, both for teams that attended and teams that didn't. However, I know that finding good resources and helpful information can be hard. I've written a walkthrough for section B (the section that I wrote) which explains each answer in depth, and refers you to links which contain more information. I hope you find this helpful and that it can guide your studying a little.</p>
+<ul>
+<li><a href="/assets/pdf/scioly/mit19-astro-exam.pdf">Exam</a></li>
+<li><a href="/assets/pdf/scioly/mit19-astro-key.pdf">Key</a></li>
+<li><a href="/assets/pdf/scioly/mit19-image-sheet.pdf">Image sheet</a></li>
+<li><a href="/assets/pdf/scioly/mit19-frq-walkthrough.pdf">Free response walkthrough</a></li>
+</ul>
+<h3>UT Invitational Oct 2018</h3>
+<p>These are the exams we used at the UT Invitational. Shout out to Aditya Shah for helping me put together these exams!</p>
+<ul>
+<li><a href="/assets/pdf/scioly/utinv18-astro-exam.pdf">Astronomy C EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utinv18-astro-key.pdf">Astronomy C KEY</a></li>
+<li><a href="/assets/pdf/scioly/utinv18-ss-exam.pdf">Solar System B EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utinv18-ss-key.pdf">Solar System B KEY</a></li>
+</ul>
+<hr />
+<h3>UT Regional Mar 2018</h3>
+<ul>
+<li><a href="/assets/pdf/scioly/utreg18-astro-exam.pdf">Astronomy C EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utreg18-astro-key.pdf">Astronomy C KEY</a></li>
+<li><a href="/assets/pdf/scioly/utreg18-ss-exam.pdf">Solar System B EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utreg18-ss-key.pdf">Solar System B KEY</a></li>
+</ul>
+<h3>UT Invitational Oct 2017</h3>
+<p>In hindsight, I was a little overzealous about writing a challenging Astronomy test; I ended up with an exam which was beneficial to the most competitive teams, but impenetrable for most other teams. Of course, this is not what Science Olympiad is about -- especially at the invitational level. I want to encourage new teams to pursue astronomy, not discourage them. I'm making an effort to write tests which are more accessible to newer teams, while still being challenging for more experienced teams.</p>
+<ul>
+<li><a href="/assets/pdf/scioly/utinv17-astro-exam.pdf">Astronomy C EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utinv17-astro-key.pdf">Astronomy C KEY</a></li>
+<li><a href="/assets/pdf/scioly/utinv17-ss-exam.pdf">Solar System B EXAM</a></li>
+<li><a href="/assets/pdf/scioly/utinv17-ss-key.pdf">Solar System B KEY</a></li>
+</ul>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Blackbody radiation made simpler]]></title>
+            <link>https://dkarkada.xyz/posts/blackbody/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/blackbody/</guid>
+            <pubDate>Thu, 15 Aug 2019 00:00:00 GMT</pubDate>
+            <description><![CDATA[The "cavity with a hole" is soo confusing.]]></description>
+            <content:encoded><![CDATA[<p>I first learned about Planck's law for blackbody radiation studying stellar astrophysics. In simple terms, it tells us a few things about an "ideal" hot object:</p>
+<ul>
+<li>It emits light at all frequencies</li>
+<li>Its temperature determines the total amount of light emitted</li>
+<li>Its temperature also determines the amount of light emitted at each particular frequency (relative to other frequencies)</li>
+</ul>
+<p>Planck's law gives the intensity of light $$B$$ at a given frequency and temperature. In math, the function looks like this:</p>
+<p>$$
+B(\omega, T)=\frac{\omega^2}{4\pi^3c^2}\frac{\hbar\omega}{e^{\hbar\omega/(kT)}-1}
+$$</p>
+<p>You can see that at small $$\omega$$ (redder light) the intensity of light drops to zero (due to the first factor) and at large $$\omega$$ (bluer light) the intensity of light <em>also</em> drops to zero (due to the exponential). So the spectrum has a peak somewhere in the middle, and the peak depends on the object temperature. That's why hot stars are bluer and cool stars are redder. All of this made perfectly good sense to me.</p>
+<p>In sophomore year of college, we derived Planck's law in class. I won't go through the derivation because it's extremely standard, but it involves imagining a bunch of "modes" and "oscillators" inside an insulated cavity with a small peephole. This was super confusing to me, because it seemed so ad-hoc. What is the cavity? What is the oscillator? Sure, we get Planck's law in the end, but how was this related to actual hot, glowing things like stars and stovetops? I can guarantee you that the sun is not a box with a peephole.</p>
+<p>I tried to ask about it, but the answer was: "This is just an idealization, don't worry about the cavity." Every derivation I found online kept referring to this same cursed cavity. What's the deal with this cavity?? Why did I have to think about boxes and oscillators and standing waves to understand what seems to be a much more general phenomenon?</p>
+<h3>The punchline (tl;dr)</h3>
+<p>We don't need to talk about cavities to understand Planck's law. The real takeaways are</p>
+<ul>
+<li>Light <em>itself</em> can have a temperature, and we can treat the EM field as a statistical mechanical ensemble of energy carriers.</li>
+<li>Then Planck's law decomposes into three parts: the energy per photon, the number of photons per mode, and the number of modes per unit frequency.</li>
+<li>The energy per photon $$E=\hbar\omega$$ is given by quantum mechanics</li>
+<li>The number of photons per mode is the Bose-Einstein distribution (since photons are bosons). This insight is what allows us to avoid the ultraviolet catastrophe</li>
+<li>The number of modes per unit frequency comes from the density of states. Calculating the density of states is the only step you might need the cavity for</li>
+<li>Multiplying these terms gives the energy per unit frequency, which is the Planck function we want.</li>
+</ul>
+<h3>Light and matter</h3>
+<p>To start to understand why stars produce a spectrum that nearly follows the Planck law, let's first talk about how light interacts with matter. I'm not an expert on this, so I'll avoid specific details. The key is to rethink the idea of a photon: not as particles, but as blips of energy on an invisible string. The string represents the EM field, which extends through all of space. Charged particles like electrons and protons interact with this string, sometimes plucking it like a harp to produce new blips, and sometimes absorbing existing blips. In physics terms, charged particle interactions can produce or absorb photons.</p>
+<p>You can imagine there being infinitely many strings, each corresponding to a different frequency, kinda like how a harp has a separate string for each note. The difference is, when you pluck a harp string, you can choose how loudly or softly to pluck. The EM field isn't like that. It's <em>quantized</em>, which means that there's only a single "volume" that you can pluck each string at. If you want to put more energy into the string, you can't just pluck it louder. You have to pluck it multiple times. And since each pluck has a predetermined energy $$E=\hbar\omega$$, the total energy in the string can only take discrete values (integer multiples of the single-pluck energy).</p>
+<p>Important note: these strings are just a metaphor (and completely unrelated to the strings from string theory). Unlike harp strings, these strings are 3-dimensional, not 1-dimensional. These EM strings all coexist in the same space. Actually, the only thing they really have in common with an instrument's strings is that you can "pluck" them by adding photons and "mute" them by absorbing photons.</p>
+<p>Each different interaction between charged particles plucks a different string, unique to that interaction. For example, a proton and electron, initially configured in the Hydrogen 3s state, can interact in such a way that they pluck the $$E=1.89;\mathrm{eV}$$ string and drop into the Hydrogen 2s state. This is the famous Balmer alpha transition: the electron drops an energy level, a photon with energy $$E=1.89;\mathrm{eV}$$ flies out.</p>
+<p>When you have a single atom, there are only so many interactions you can have. And so, there are only so many strings that can be plucked. That's why the atomic spectra are discrete. But when you have a bunch of atoms -- say, Avogadro's number of them -- they all interact with each other in super complicated ways, and the number of available interactions skyrockets. So together, they can pretty much pluck any string of their choosing. So the question is: how often is each string plucked?</p>
+<p>The question I just asked is completely equivalent to the blackbody problem. We want to know which frequencies of light are emitted from a blackbody, and with what intensity. Since the strings each correspond to a particular frequency, and the number of photons corresponds to the intensity, we can derive the Planckian spectrum by answering the question about plucked strings.</p>
+<h3>Thermalization</h3>
+<p>For me, the key insight into blackbody radiation was understanding thermalization. Roughly speaking, two systems are thermalized with each other when their energies are in balance with each other. Any flow of energy in one direction exactly matches the opposite flow. For matter, we invented a quantity called "temperature" to measure this. If two objects are at different temperatures, and then you allow them to transfer energy, energy will flow from the hotter body to the cooler body until their temperatures match. This is the <em>definition</em> of temperature: "the thing that's equal when two objects are in thermal equilibrium."</p>
+<p>It's easy to think about how two systems made of matter can thermalize with each other. It's why we put ice in our drinks to cool them down, or why we enjoy hot chocolate in the winter. The next step is to imagine that one of the systems is some matter (like a hot star) and the other system <em>is the EM field</em>. This is a bit of a conceptual leap. We're saying that the EM field has a "temperature" and can either "heat up" or "cool down" when it "touches" an object.</p>
+<p>Weird as that is, we can see that the EM field <em>does</em> trade energy with matter. That's what I was talking about earlier, with how electrons and protons can pluck the EM strings, or absorb existing blips on those strings. This isn't that much different from an ice cube plucking energy from the glass of water, causing the ice cube to slowly melt and the water to chill. Now we're just attaching a number -- temperature -- to the infinite-stringed EM harp.</p>
+<p>Actually, we're going to go one step further. As I mentioned before, if we have enough atoms, they can pretty much pluck any string of their choosing. So you can imagine one string getting a blip absorbed by the atoms, which then interact with each other and redistribute that energy within themselves, and eventually pluck another string. So in the end, the gas particles are just a conduit: <em>the thermal equilibration is actually happening between the different strings themselves</em>.</p>
+<h3>The three factors</h3>
+<p>This is great! Now, we've conceptually gotten rid of the atoms. All we have is the EM strings, all trying to equilibrate some fixed amount of energy among themselves. And this is where statistical mechanics comes in. Satyendra Bose showed that for bosons (such as photons) which don't have restrictions on the number of blips per string, the number of blips you expect to find on a given string is</p>
+<p>$$
+n(E) = \frac{1}{e^{E/kT}-1}
+$$</p>
+<p>where $$E=\hbar\omega$$ is the single-pluck energy of the string, and $$kT$$ is the temperature (scaled to use units of energy). Multiply this by the energy per blip (just $$E$$) and you get the expected energy on a given string:</p>
+<p>$$
+\langle E \rangle = \frac{\hbar\omega}{e^{\hbar\omega/kT}-1}
+$$</p>
+<p>Ok sweet, we're almost there. The last issue we need to take care of is that there are an uncountably infinite number of strings. The Planck function deals with this by being a <em>density function</em>. This means that $$B(\omega, T)$$ doesn't directly give the intensity of light at <em>exactly</em> frequency $$\omega$$. Instead, it gives the intensity of light in an infinitesimally small window around $$\omega$$. In other words, to get the total energy in a certain frequency band, you need to integrate the Planck function.</p>
+<p>To turn our energy-per-string into a density function, we need to multiply a third factor: the <em>density of states</em>. Intuitively, this factor counts the number of strings in the small window around $$\omega$$. I won't go through the calculation, but in the end, the total number of states within the window $$[\omega,;\omega+\mathrm{d}\omega]$$ is $$\omega^2/4\pi^3c^2;\mathrm{d}\omega$$.</p>
+<p>Multiplying these together: The energy per unit frequency (a.k.a the Planck function) is: energy per photon $$\times$$ number of photons per string $$\times$$ number of strings per unit frequency:</p>
+<p>$$
+B(\omega, T)=\hbar\omega \cdot \frac{1}{e^{\hbar\omega/(kT)}-1} \cdot \frac{\omega^2}{4\pi^3c^2}
+$$</p>
+<h3>A real example</h3>
+<p>So how does this explain why stars have near-perfect blackbody spectra? It's because we made a few assumptions in our derivation, and the conditions inside a stellar atmosphere satisfy these assumptions.</p>
+<p>The first assumption is that the EM field is in contact with charged particles, and these particles are at a certain temperature. In the atmosphere of a star, there are a ton of hydrogen atoms, so the EM field has plenty of protons and electrons particles to interact with. These atoms have had ample time to thermalize with each other, so they're all at the same temperature (at least the ones near the surface).</p>
+<p>The second assumption is that the EM field can freely trade energy with the matter. If the matter can only pluck certain strings, then the EM field has no hope of equilibrating with itself. But in a star, we have a bajillion atoms, all interacting with each other and with the EM field. This means that there are an ultra-bajillion different possible interactions, each plucking different strings. So, the EM field can steal energy from the hot particles, and it can freely distribute that energy among all its different strings, until it's in thermal equilibrium with the matter and with itself.</p>
+<p>And that's it! Once the EM field is thermalized, that's the definition of blackbody radiation.</p>
+<p>But the star's atmosphere doesn't go on forever -- the gas particles eventually end at the surface of the star, and there's just outer space after that. But the EM field pervades the whole universe, not just the inside of the star. So all those blips which have been plucked can keep travelling along those strings, flying away from the star until they hit our telescopes.</p>
+<p>Because of this, all hot objects are always bleeding away energy; the EM field steals it and runs. If the star weren't constantly replenishing its energy via nuclear fusion, then the stolen energy would quickly cause the star to cool into a cold, dim ball of atoms.</p>
+<h3>Takeaways</h3>
+<p>My qualm with the standard presentation of the derivation of the Planck function is that it doesn't clearly explain the relationship between the oscillators, the cavity, the modes, and the radiation. It was unclear to me which parts were mathematical tricks, which parts underlied "real" physics, and how this all related to the physics of real thermal radiation (like stars).</p>
+<p>The explanation I gave is just how I think of it. It's nothing remarkable or revolutionary, and in retrospect, I can see how it fits in with the cavity/oscillator picture. I now see that the cavity is merely a tool to calculate the density of states, and has no other physical basis. The oscillators are just a way to abstract away the mechanism by which the different strings (modes) thermalize with each other. But I think spelling these things out can really help aid student understanding. Factoring the Planck function into the density of states, the photon energy, and the Bose-Einstein distribution really clarified a lot of conceptual misunderstandings on my end. That's why I wanted to write this post.</p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Science Olympiad]]></title>
+            <link>https://dkarkada.xyz/posts/scioly-origin/</link>
+            <guid isPermaLink="false">https://dkarkada.xyz/posts/scioly-origin/</guid>
+            <pubDate>Tue, 07 Nov 2017 00:00:00 GMT</pubDate>
+            <description><![CDATA[How and why I got involved as an alumnus]]></description>
+            <content:encoded><![CDATA[<p>Science Olympiad as a whole was an absolutely integral part of my time in high school. It was enriching academically, personally, and socially -- some of my best memories are of spending time with my teammates, whether it be solving hard engineering problems, discussing competitive strategies and meta-strategies, or goofing off.</p>
+<p>My freshman year, I had swim practice after school, effectively precluding any other afterschool activity, including Science Olympiad. The scioly team went to nats that year and I was soooo jealous. Then I got onto the varsity swim team (morning practice) and I immediately signed up for the scioly team. Unfortunately, in my sophomore and junior years, our school was on the losing end of the "Texas bloodbath:" a state tournament with three highly competitive teams, only two of which advance to nationals.</p>
+<p><img src="https://dkarkada.xyz/_astro/team.BquWd2rS_Z11MiIj.webp" alt="squad (i'm holding mudkip)" /></p>
+<p>For the most part, I competed in engineering events; these involved designing and building devices that performed some desired task effectively and reliably. My senior year, I ended up having a change of pace. I picked up Astronomy, since a) one of our previous astronomy experts had graduated and needed a replacement, and b) I'd been interested in astronomy as a subject since childhood.</p>
+<p>I acquired a digital copy of the classic textbook <em>Introduction to Modern Astrophysics by Carroll and Ostlie</em> and pored through it. In addition to astronomy, I learned a few things: 1) astronomy is not exactly what I'd imagined it was, 2) this is really damn cool, and 3) I'm actually REALLY into it. I'd always had a notion that most of astronomy was about finding and identifying objects in the sky; I was less familiar with the depth of the physics behind our modern understanding of astronomy. Being a physics buff, I found it invigorating.</p>
+<p>My partner (who had more experience in the event) was absolutely crucial in guiding me in the right direction and offering useful competitive advice, as well as taking care of some of the celestial mechanics and other math that I wasn't so interested in. This combination of factors -- my interest and dedication, his guidance and experience, and surely a few moments of serendipity -- resulted in us placing 1st in the event at the state tournament. To add to my ecstasy, our team advanced to nationals, which would be my first time competing at that level. At nationals, my partner and I placed 2nd, which is a moment I'll always remember with great pride. Our team as a whole placed 6th overall -- the highest placement our school had ever achieved at nationals.</p>
+<p><img src="https://dkarkada.xyz/_astro/ev.fvxGTYO-_1SU5v8.webp" alt="me and tom tryna drive an electric vehicle. am to the pm pm to the am RUN" /></p>
+<p>The weeks immediately following nationals were a euphoric blur. Nationals had been a sort of catharsis of 3 years of tension for our team, and as a senior I was finally able to indulge myself in true senioritis. I spent a good amount of that time reflecting. It seemed fitting that I'd come full circle: my first scientific love as a kid was astronomy, and here I was again, rediscovering that passion in a new context, in a new light. And, in all truth, it was only through a series of happy coincidences that I even ended up in the Astronomy event in the first place, which made it feel even more special.</p>
+<p>I'd decided before nationals that I was going to get involved with Science Olympiad as an alumnus, helping to run the UT tournament in some way. In part due to my intrinsic interest, and in part due to my personal success at nationals, I ended up running the Astronomy event at UT invitational during my freshman year of college. Around the same time, I reached out to Donna Young, the national event supervisor for Astronomy. Her immediate friendliness and enthusiasm eventually led me to contribute to running Astronomy at the national level. Somewhere along the way, I decided to pick up an astronomy major, and maybe even study astrophysics in graduate school.</p>
+<p>The point of this story is to illustrate how influential Science Olympiad has been to me -- not just in high school, but also far beyond. If you're currently a competitor reading this (not necessarily competing in Astronomy), here's the takeaway: work hard and take your efforts seriously, because they can end up shaping your life in ways you may not expect.</p>
+]]></content:encoded>
+        </item>
+    </channel>
+</rss>
