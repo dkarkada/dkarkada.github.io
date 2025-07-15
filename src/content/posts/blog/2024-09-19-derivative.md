@@ -102,7 +102,7 @@ Tensors can only contract axes that share a vector space: if $$\mathbf{M}\in\mat
 
 A contraction is a structure-reducing operation. I imagine that it's called "contraction" because it collapses large and unwieldy tensors towards structureless scalars. Because of their linearity, contractions are easily parallelizable, which is what gives modern GPUs a decisive computational advantage in computing tensor expressions.
 
-The insight of Einstein notation is that contraction is such a common operation that we should save ourselves the pain of writing out all the summation signs. We can *infer* a sum when indices are repeated. This is the same notation used in np.einsum and torch.einsum.
+The insight of Einstein notation is that contraction is such a common operation that we should save ourselves the pain of writing out all the summation signs. We can *infer* a sum when indices are repeated. This is the same notation used in `np.einsum` and `torch.einsum`.
 
 $$
 \mathbf{M}\mathbf{x}=\sum_j M_{ij}x_j={M^\mu}_\nu x^\nu
@@ -132,4 +132,4 @@ The other ingredient is that we distinguish two *types* of axes, which we denote
 
 [^2]: Remember to use different indices in the variable of differentiation from those in the expression; there's no contraction between the variable of differentiation and your expression.
 
-[^3]: Unfortunately, the nomenclature is pretty muddy. The term "axis" is used in math to refer to a particular direction in a vector space — that's very different from an axis of a tensor. What's worse, the "size" of a tensor axis is the dimension of the vector space that axis acts on, but pytorch uses "dimensions" to refer to the axes themselves. This ambiguity is avoided in numpy, which uses the kwarg "axis" to refer to an axis. Both numpy and pytorch use attribute "shape" to refer to the sizes of each axis (i.e., the geometric dimension of each corresponding vector space).
+[^3]: Unfortunately, the nomenclature is pretty muddy. The term "axis" is used in math to refer to a particular direction in a vector space — that's very different from an axis of a tensor. What's worse, the "size" of a tensor axis is the dimension of the vector space that axis acts on, but PyTorch uses "dimensions" to refer to the axes themselves. This ambiguity is avoided in NumPy, which uses the kwarg "axis" to refer to an axis. Both NumPy and PyTorch use attribute "shape" to refer to the sizes of each axis (i.e., the geometric dimension of each corresponding vector space).
