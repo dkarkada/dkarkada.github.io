@@ -1,7 +1,10 @@
 html {
-  --at-apply: 'bg-background c-secondary antialiased';
+  background-color: var(--color-background);
+  color: var(--color-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   scrollbar-width: thin;
-  scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.25) transparent;
+  scrollbar-color: oklch(var(--color-secondary-params) / 0.25) transparent;
   scrollbar-gutter: stable;
 }
 
@@ -11,7 +14,7 @@ body {
   -webkit-backface-visibility: hidden;
 }
 body::selection {
-  --at-apply: 'bg-highlight';
+  background-color: var(--color-highlight);
 }
 
 #noise-overlay {
@@ -20,19 +23,22 @@ body::selection {
   z-index: -1;
   background-image: url('../assets/img/noiseTextureBlue.png');
   background-repeat: repeat;
-  /* opacity: .32;
-  mix-blend-mode: overlay; */
   pointer-events: none;
 }
 
 /* PhotoSwipe Background Color */
 .pswp .pswp__bg {
-  --at-apply: 'bg-background!';
+  background-color: var(--color-background) !important;
 }
 
 /* Fix KaTeX Overflow with Hidden Scrollbar */
 .katex-display {
-  --at-apply: 'my-6 overflow-x-auto overflow-y-hidden scrollbar-hidden';
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .katex-display::-webkit-scrollbar {
   display: none;
@@ -41,60 +47,109 @@ body::selection {
 /* Highlight Hover Animation */
 .highlight-static,
 .highlight-hover {
-  --at-apply: 'relative inline-block';
+  position: relative;
+  display: inline-block;
 }
 .highlight-static::after,
 .highlight-hover::after {
   content: '';
-  --at-apply: 'absolute left-0 z--1 h-0.5em w-full bg-highlight';
+  position: absolute;
+  left: 0;
+  z-index: -1;
+  height: 0.5em;
+  width: 100%;
+  background-color: var(--color-highlight);
 }
 .highlight-static::after,
 .highlight-hover:hover::after {
-  --at-apply: 'origin-bottom-left scale-x-100';
+  transform-origin: bottom left;
+  transform: scaleX(1);
 }
 .highlight-hover::after {
-  --at-apply: 'origin-bottom-right scale-x-0 transition-transform ease-out lg:duration-300';
+  transform-origin: bottom right;
+  transform: scaleX(0);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+@media (min-width: 1024px) {
+  .highlight-hover::after {
+    transition-duration: 300ms;
+  }
 }
 
 /* Heading Anchor Link */
 .heading-anchor-link {
-  --at-apply: 'inline-block translate-y-0.1em';
+  display: inline-block;
+  transform: translateY(0.1em);
 }
 h1:hover .heading-anchor-link svg,
 h2:hover .heading-anchor-link svg,
 h3:hover .heading-anchor-link svg,
 h4:hover .heading-anchor-link svg {
-  --at-apply: 'op-40';
+  opacity: 0.4;
 }
 .heading-anchor-link svg {
-  --at-apply: 'ml-0.4em aspect-square w-0.9em op-0 transition-opacity ease-out active:scale-90';
+  margin-left: 0.4em;
+  aspect-ratio: 1 / 1;
+  width: 0.9em;
+  opacity: 0;
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.heading-anchor-link svg:active {
+  transform: scale(0.9);
 }
 h1:hover .heading-anchor-link svg:hover,
 h2:hover .heading-anchor-link svg:hover,
 h3:hover .heading-anchor-link svg:hover,
 h4:hover .heading-anchor-link svg:hover {
-  --at-apply: 'op-80';
+  opacity: 0.8;
 }
 
 /* Code Copy Button */
 .code-copy-button {
-  --at-apply: 'absolute right-2.2 top-2.2 z-99 aspect-square w-8 cursor-pointer uno-round-border border-secondary/15';
-  --at-apply: 'bg-background c-secondary/80 op-0 active:scale-90 hover:(border-primary/15 c-primary/80)';
+  position: absolute;
+  right: 0.55rem;
+  top: 0.55rem;
+  z-index: 99;
+  aspect-ratio: 1 / 1;
+  width: 2rem;
+  cursor: pointer;
+  border-width: 1px;
+  border-style: solid;
+  border-color: oklch(var(--color-secondary-params) / 0.15);
+  border-radius: 0.25rem;
+  background-color: var(--color-background);
+  color: oklch(var(--color-secondary-params) / 0.8);
+  opacity: 0;
   transition: opacity 300ms ease-out, background-color 150ms ease-out, transform 50ms ease-out;
 }
+.code-copy-button:active {
+  transform: scale(0.9);
+}
+.code-copy-button:hover {
+  border-color: oklch(var(--color-primary-params) / 0.15);
+  color: oklch(var(--color-primary-params) / 0.8);
+}
 .code-block-wrapper:hover .code-copy-button {
-  --at-apply: 'op-100';
+  opacity: 1;
 }
 .code-copy-button.copy-success {
-  --at-apply: 'border-none bg-emerald-600 c-background';
+  border: none;
+  background-color: #059669;
+  color: var(--color-background);
 }
 html.dark .code-copy-button.copy-success {
-  --at-apply: 'bg-emerald-500';
+  background-color: #10b981;
 }
 .code-copy-button svg {
-  --at-apply: 'mx-auto aspect-square w-50%';
+  margin-left: auto;
+  margin-right: auto;
+  aspect-ratio: 1 / 1;
+  width: 50%;
 }
 .code-copy-button svg,
 .code-copy-button svg path {
-  --at-apply: 'pointer-events-none';
+  pointer-events: none;
 }

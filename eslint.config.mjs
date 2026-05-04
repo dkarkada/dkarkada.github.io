@@ -1,8 +1,8 @@
 import antfu from '@antfu/eslint-config'
 
 export default antfu({
-  unocss: true,
   typescript: true,
   astro: true,
+  unocss: false,
   ignores: ['public/vendors/**'],
 })

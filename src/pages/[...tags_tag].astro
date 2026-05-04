@@ -13,7 +13,6 @@ export async function getStaticPaths() {
 
   const paths: PathItem[] = []
 
-  // Default locale
   const defaultTags = await getAllTags(defaultLocale)
   defaultTags.forEach((tag: string) => {
     paths.push({
@@ -22,7 +21,6 @@ export async function getStaticPaths() {
     })
   })
 
-  // More locales
   for (const lang of moreLocales) {
     const langTags = await getAllTags(lang)
     langTags.forEach((tag: string) => {
@@ -41,20 +39,15 @@ const posts = await getPostsByTag(tag, lang)
 const allTags = await getAllTags(lang)
 ---
 
-<Layout >
-  <!-- Decorative Line -->
+<Layout>
   <div class="uno-decorative-line"></div>
-  <!-- Tags List -->
-  <TagsWrapper
-    tags={allTags}
-    currentTag={tag}
-  />
+  <TagsWrapper tags={allTags} currentTag={tag} />
 
-  <!-- Posts List -->
-  <div class="mt-10.5">
-    <PostList
-      posts={posts}
-      lang={lang}
-    />
+  <div class="posts-section">
+    <PostList posts={posts} lang={lang} />
   </div>
 </Layout>
+
+<style>
+.posts-section { margin-top: 2.625rem; }
+</style>

@@ -11,14 +11,12 @@ interface Props {
 }
 
 const { postTitle, postDescription, postSlug } = Astro.props
-const langCode = ''
 const { title, description, author, url, favicon } = themeConfig.site
 const { mode: defaultMode, light: { background: lightMode }, dark: { background: darkMode } } = themeConfig.color
 const { katex: katexEnabled, reduceMotion } = themeConfig.global
 const { enabled: commentEnabled = false, waline: { serverURL: walineServerURL = '' } = {} } = themeConfig.comment ?? {}
 const { verification = {}, twitterID = '', googleAnalyticsID = '', umamiAnalyticsID = '', apiflashKey = '' } = themeConfig.seo ?? {}
 const { google = '', bing = ''} = verification
-const { customGoogleAnalyticsJS = '', customUmamiAnalyticsJS = '' } = themeConfig.preload ?? {}
 
 const initMetaTheme = defaultMode === 'dark' ? darkMode : lightMode
 const siteTitle = title
@@ -29,8 +27,8 @@ const pageDescription = postDescription || siteDescription
 const pageImage = postSlug
   ? `${url}/og/${postSlug}.png`
   : apiflashKey
-    ? `https://api.apiflash.com/v1/urltoimage?access_key=${apiflashKey}&url=${url}/${langCode}&format=png&width=1500&height=788&ttl=86400&wait_until=network_idle&no_tracking=true`
-    : `https://api.apiflash.com/v1/urltoimage?access_key=02a837b6188f4ba0a7fd9fbeff03a83e&url=https://retypeset.radishzz.cc/${langCode}&format=png&width=1500&height=788&ttl=172800&wait_until=network_idle&no_tracking=true`
+    ? `https://api.apiflash.com/v1/urltoimage?access_key=${apiflashKey}&url=${url}/&format=png&width=1500&height=788&ttl=86400&wait_until=network_idle&no_tracking=true`
+    : undefined
 ---
 
 <head>
@@ -154,12 +152,12 @@ window
     <script
       is:inline
       type="text/partytown"
-      src={customGoogleAnalyticsJS || `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsID}`}
+      src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsID}`}
     />
     <script
       is:inline
       type="text/partytown"
-      define:vars={{ googleAnalyticsID, customGoogleAnalyticsJS }}
+      define:vars={{ googleAnalyticsID }}
     >
       window.dataLayer = window.dataLayer || []
       window.gtag = function () {
@@ -167,15 +165,7 @@ window
         dataLayer.push(arguments)
       }
       window.gtag('js', new Date())
-
-      if (customGoogleAnalyticsJS) {
-        window.gtag('config', googleAnalyticsID, {
-          transport_url: new URL(customGoogleAnalyticsJS).origin,
-        })
-      }
-      else {
-        window.gtag('config', googleAnalyticsID)
-      }
+      window.gtag('config', googleAnalyticsID)
     </script>
   </>
 )}
@@ -187,7 +177,7 @@ window
     type="text/partytown"
     crossorigin="anonymous"
     data-website-id={umamiAnalyticsID}
-    src={customUmamiAnalyticsJS || 'https://cloud.umami.is/script.js'}
+    src="https://cloud.umami.is/script.js"
     data-cache="true"
   />
 )}

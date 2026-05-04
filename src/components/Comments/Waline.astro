@@ -12,12 +12,8 @@ const {
 } = themeConfig.comment ?? {}
 ---
 
-<div
-  id="waline"
-  class="mt-16"
-></div>
+<div id="waline" style="margin-top: 4rem;"></div>
 
-<!-- Waline Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <script
   is:inline
   define:vars={{
@@ -43,7 +39,7 @@ function setupWaline() {
   init({
     el: '#waline',
     serverURL,
-    path: window.location.pathname.replace(/^\/([a-z]{2}(-[a-z]{2})?)\//, '/'), // Share comments on posts in different languages
+    path: window.location.pathname.replace(/^\/([a-z]{2}(-[a-z]{2})?)\//, '/'),
     lang: currentWalineLang,
     emoji,
     dark: 'html.dark',
@@ -57,12 +53,9 @@ function setupWaline() {
   })
 }
 
-// Create an intersection observer to lazy load Waline comments when the container enters viewport
 function lazySetupWaline() {
   const walineContainer = document.getElementById('waline')
-  if (!walineContainer) {
-    return
-  }
+  if (!walineContainer) return
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -80,128 +73,136 @@ lazySetupWaline()
 document.addEventListener('astro:page-load', lazySetupWaline)
 </script>
 
-<!-- Custom CSS Styles >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <style is:global>
 #waline .wl-login-info {
-  --at-apply: 'mr-3 mt-0'
+  margin-right: 0.75rem;
+  margin-top: 0;
 }
 #waline .wl-avatar {
-  --at-apply: 'border-none'
+  border: none;
 }
 #waline .wl-logout-btn {
-  --at-apply: 'z-99'
+  z-index: 99;
 }
 #waline .wl-login-nick:not(:has(img)) {
-  --at-apply: 'mt-1.4 leading-3.6';
+  margin-top: 0.35rem;
+  line-height: 0.9rem;
 }
 #waline .wl-panel {
-  --at-apply: 'm-0 border-secondary/25 rounded-lg bg-transparent'
+  margin: 0;
+  border-color: oklch(var(--color-secondary-params) / 0.25);
+  border-radius: 0.5rem;
+  background-color: transparent;
 }
 #waline .wl-header {
-  --at-apply: 'p-0';
+  padding: 0;
 }
 #waline .wl-header-item {
-  --at-apply: 'border-b border-primary/25 border-solid';
+  border-bottom-width: 1px;
+  border-bottom-color: oklch(var(--color-primary-params) / 0.25);
+  border-style: solid;
 }
 #waline .wl-header label {
-  --at-apply: 'text-3';
+  font-size: 0.75rem;
 }
 #waline .wl-header input {
-  --at-apply: 'text-2.8';
+  font-size: 0.7rem;
 }
 #waline .wl-card,
 #waline .wl-header.item3 {
-  --at-apply: 'border-b-0';
+  border-bottom-width: 0;
 }
 #waline .wl-card .wl-quote {
-  --at-apply: 'mt-4 border-is-none';
+  margin-top: 1rem;
+  border-inline-start: none;
 }
 #waline .wl-editor {
-  --at-apply: 'min-h-24';
+  min-height: 6rem;
 }
 #waline .wl-editor::placeholder {
-  --at-apply: 'c-primary/25';
+  color: oklch(var(--color-primary-params) / 0.25);
 }
 #waline .wl-footer {
-  --at-apply: 'm-2';
+  margin: 0.5rem;
 }
 #waline .wl-text-number,
 #waline .wl-action[title="Markdown Guide"],
 #waline .wl-sort,
 #waline .wl-gallery::-webkit-scrollbar {
-  --at-apply: 'hidden';
+  display: none;
 }
 #waline .wl-emoji-popup {
-  --at-apply: 'start-0 max-w-532px border-secondary/25';
+  inset-inline-start: 0;
+  max-width: 532px;
+  border-color: oklch(var(--color-secondary-params) / 0.25);
 }
 #waline .wl-emoji-popup .wl-tab-wrapper {
   scrollbar-width: thin;
 }
 #waline .wl-gif-popup {
-  --at-apply: 'border-secondary/25';
+  border-color: oklch(var(--color-secondary-params) / 0.25);
 }
 #waline .wl-gif-popup input {
-  --at-apply: 'border-secondary/25 bg-background';
+  border-color: oklch(var(--color-secondary-params) / 0.25);
+  background-color: var(--color-background);
 }
 #waline .wl-gif-popup input::placeholder {
-  --at-apply: 'text-3.5 c-secondary/30';
+  font-size: 0.875rem;
+  color: oklch(var(--color-secondary-params) / 0.3);
 }
 #waline .wl-gallery {
-  --at-apply: 'scrollbar-hidden';
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+#waline .wl-gallery::-webkit-scrollbar {
+  display: none;
 }
 #waline .wl-meta-head {
-  --at-apply: 'px-0 pb-2 pt-3';
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0.5rem;
+  padding-top: 0.75rem;
 }
 #waline .wl-card-item {
-  --at-apply: 'px-0';
+  padding-left: 0;
+  padding-right: 0;
 }
 #waline .wl-user-avatar {
-  --at-apply: 'mt-1';
+  margin-top: 0.25rem;
 }
 #waline .wl-content p {
-  --at-apply: 'text-3.5 leading-6';
+  font-size: 0.875rem;
+  line-height: 1.5rem;
 }
 #waline .wl-time {
-  --at-apply: 'c-primary/75';
+  color: oklch(var(--color-primary-params) / 0.75);
 }
 #waline .wl-edit,
 #waline .wl-delete {
-  --at-apply: 'mr-0.4';
+  margin-right: 0.1rem;
 }
 #waline .wl-like {
-  --at-apply: 'mr-1.2';
+  margin-right: 0.3rem;
 }
 </style>
 
-<!-- Official CSS Variables >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <style>
 #waline {
-  /* Regular Colors */
-  --waline-white: oklch(var(--un-preset-theme-colors-background));
-  --waline-light-grey: oklch(var(--un-preset-theme-colors-primary) / 0.25);
-  --waline-dark-grey: oklch(var(--un-preset-theme-colors-secondary));
-
-  /* Theme Colors */
-  --waline-theme-color: oklch(var(--un-preset-theme-colors-primary));
-  --waline-active-color: oklch(var(--un-preset-theme-colors-primary));
-
-  /* Layout Colors */
-  --waline-color: oklch(var(--un-preset-theme-colors-secondary));
-  --waline-bg-color: oklch(var(--un-preset-theme-colors-background));
-  --waline-bg-color-light: oklch(var(--un-preset-theme-colors-background));
-  --waline-bg-color-hover: oklch(var(--un-preset-theme-colors-background));
-  --waline-border-color: oklch(var(--un-preset-theme-colors-primary) / 0.25);
-  --waline-disable-bg-color: oklch(var(--un-preset-theme-colors-secondary) / 0.05);
-  --waline-disable-color: oklch(var(--un-preset-theme-colors-primary));
-
-  /* Special Colors */
-  --waline-bq-color: oklch(var(--un-preset-theme-colors-primary) / 0.25);
-
-  /* Information */
-  --waline-info-bg-color: oklch(var(--un-preset-theme-colors-background));
-  --waline-info-color: oklch(var(--un-preset-theme-colors-primary) / 0.25);
-
-  /* Rendering Options */
+  --waline-white: var(--color-background);
+  --waline-light-grey: oklch(var(--color-primary-params) / 0.25);
+  --waline-dark-grey: var(--color-secondary);
+  --waline-theme-color: var(--color-primary);
+  --waline-active-color: var(--color-primary);
+  --waline-color: var(--color-secondary);
+  --waline-bg-color: var(--color-background);
+  --waline-bg-color-light: var(--color-background);
+  --waline-bg-color-hover: var(--color-background);
+  --waline-border-color: oklch(var(--color-primary-params) / 0.25);
+  --waline-disable-bg-color: oklch(var(--color-secondary-params) / 0.05);
+  --waline-disable-color: var(--color-primary);
+  --waline-bq-color: oklch(var(--color-primary-params) / 0.25);
+  --waline-info-bg-color: var(--color-background);
+  --waline-info-color: oklch(var(--color-primary-params) / 0.25);
   --waline-avatar-radius: 0.5rem;
 }
 </style>

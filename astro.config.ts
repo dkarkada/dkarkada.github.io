@@ -12,7 +12,6 @@ import rehypeSlug from 'rehype-slug'
 import remarkDirective from 'remark-directive'
 import remarkMath from 'remark-math'
 import { visit } from 'unist-util-visit'
-import UnoCSS from 'unocss/astro'
 import { themeConfig } from './src/config'
 import { rehypeCodeCopyButton } from './src/plugins/rehype-code-copy-button.mjs'
 import { rehypeImgToFigure } from './src/plugins/rehype-img-to-figure.mjs'
@@ -23,12 +22,6 @@ import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
 import react from '@astrojs/react';
 
 const url = themeConfig.site.url
-const imageHostURL = themeConfig.preload?.imageHostURL
-// Configure domains and remotePatterns to optimize remote images in Markdown files using ![alt](src) syntax
-// Docs: https://docs.astro.build/en/guides/images/#authorizing-remote-images
-const imageConfig = imageHostURL
-  ? { image: { domains: [imageHostURL], remotePatterns: [{ protocol: 'https' }] } }
-  : {}
 
 export default defineConfig({
   vite: {
@@ -45,11 +38,7 @@ export default defineConfig({
     prefetchAll: true,
     defaultStrategy: 'viewport', // hover, tap, viewport, load
   },
-  ...imageConfig,
   integrations: [
-    UnoCSS({
-      injectReset: true,
-    }),
     mdx(),
     partytown({
       config: {

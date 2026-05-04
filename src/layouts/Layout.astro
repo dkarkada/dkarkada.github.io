@@ -1,4 +1,5 @@
 ---
+import type { MarkdownHeading } from 'astro'
 import Footer from '@/components/Footer.astro'
 import Anim from '../components/Anim.jsx';
 import Navbar from '@/components/Navbar.astro'
@@ -7,30 +8,34 @@ import GithubCard from '@/components/Widgets/GithubCard.astro'
 import GsapAnimation from '@/components/Widgets/GsapAnimation.astro'
 import PhotoSwipe from '@/components/Widgets/PhotoSwipe.astro'
 import SoundEffect from '@/components/Widgets/SoundEffect.astro'
+import TOC from '@/components/Widgets/TOC.astro'
 import themeConfig from '@/config'
 import Head from '@/layouts/Head.astro'
 import { getPageInfo } from '@/utils/page'
+import '@/styles/theme.css'
 import '@/styles/extend.css'
 import '@/styles/font.css'
 import '@/styles/global.css'
 import '@/styles/lqip.css'
 import '@/styles/markdown.css'
 import '@/styles/transition.css'
+import '@/styles/anim.css'
 
 interface Props {
   postTitle?: string
   postDescription?: string
   postSlug?: string
+  postAbbrlink?: string
+  headings?: MarkdownHeading[]
 }
 
-const { postTitle, postDescription, postSlug} = Astro.props
-const { isPost, isAbout, isHome } = getPageInfo(Astro.url.pathname)
+const { postTitle, postDescription, postSlug, postAbbrlink, headings } = Astro.props
+const { isPost, isAbout, isHome, isTag } = getPageInfo(Astro.url.pathname)
+const isAnimPost = postAbbrlink === 'anim'
 const fontStyle = themeConfig.global.fontStyle === 'serif' ? 'font-serif' : 'font-sans'
 const animationEnabled = !themeConfig.global.reduceMotion
-const MarginBottom = isPost && themeConfig.comment?.enabled
-  ? 'mb-10' // Post page with comments
-  : 'mb-12' // Other pages without comments
-const isStaticPost = Astro.url.pathname === '/blog/2025/my-static-post/'
+const mainClass = isPost && themeConfig.comment?.enabled ? 'main-with-comments' : 'main-no-comments'
+const showTOCSidebar = isPost && !isAnimPost && !isAbout
 ---
 
 <html
@@ -43,23 +48,47 @@ const isStaticPost = Astro.url.pathname === '/blog/2025/my-static-post/'
   <Head {postTitle} {postDescription} {postSlug} />
   <div id="noise-overlay"></div>
   <body>
-    <div
-      class="relative mx-auto max-w-205.848 min-h-vh w-full min-h-dvh"
-      p="x-[min(7.25vw,3.731rem)] y-10"
-      lg="mx-[max(5.75rem,calc(50vw-34.25rem))] my-20 max-w-[min(calc(75vw-16rem),44rem)] min-h-full p-0"
-    >
-      <Anim client:load isAbout={isAbout} isHome={isHome}/>
+    <div class="page-wrapper">
+      {showTOCSidebar
+        ? <div class="toc-sidebar-wrapper"><TOC headings={headings ?? []} sidebar={true} /></div>
+        : <Anim client:load isAbout={isAbout} />
+      }
       <Navbar />
-      <main class={MarginBottom}>
+      <main class={mainClass}>
         <slot />
       </main>
       <Footer />
     </div>
     {animationEnabled && <GsapAnimation />}
-    <!-- <Button /> -->
     <SoundEffect />
     <CodeCopyButton />
     <PhotoSwipe />
     <GithubCard />
   </body>
 </html>
+
+<style>
+.page-wrapper {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 51.462rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  padding: 2.5rem min(7.25vw, 3.731rem);
+}
+@media (min-width: 1024px) {
+  .page-wrapper {
+    margin-left: max(5.75rem, calc(50vw - 34.25rem));
+    margin-right: max(5.75rem, calc(50vw - 34.25rem));
+    margin-top: 5rem;
+    margin-bottom: 5rem;
+    max-width: min(calc(75vw - 16rem), 44rem);
+    min-height: 100%;
+    padding: 0;
+  }
+}
+.main-with-comments { margin-bottom: 2.5rem; }
+.main-no-comments { margin-bottom: 3rem; }
+</style>

@@ -80,14 +80,8 @@ export interface ThemeConfig {
       name: string
       url: string
     }[]
-    startYear: number
   }
 
-  preload?: {
-    imageHostURL?: string
-    customGoogleAnalyticsJS?: string
-    customUmamiAnalyticsJS?: string
-  }
 }
 
 export default ThemeConfig

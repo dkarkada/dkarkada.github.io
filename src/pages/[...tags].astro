@@ -12,13 +12,11 @@ export async function getStaticPaths() {
 
   const paths: PathItem[] = []
 
-  // Default locale
   paths.push({
     params: { tags: 'tags/' },
     props: { lang: defaultLocale },
   })
 
-  // More locales
   moreLocales.forEach((lang: string) => {
     paths.push({
       params: { tags: `${lang}/tags/` },
@@ -34,10 +32,6 @@ const allTags = await getAllTags(lang)
 ---
 
 <Layout>
-  <!-- Decorative Line -->
   <div class="uno-decorative-line"></div>
-  <!-- Tags List -->
-  <TagsWrapper
-    tags={allTags}
-  />
+  <TagsWrapper tags={allTags} />
 </Layout>

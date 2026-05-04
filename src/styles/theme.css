@@ -1,0 +1,122 @@
+/* ===== CSS Reset ===== */
+*, ::before, ::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+}
+body { margin: 0; line-height: inherit; }
+hr { height: 0; color: inherit; border-top-width: 1px; }
+h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
+a { color: inherit; text-decoration: inherit; }
+b, strong { font-weight: bolder; }
+code, kbd, samp, pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 1em;
+}
+small { font-size: 80%; }
+sub, sup { font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
+sub { bottom: -0.25em; }
+sup { top: -0.5em; }
+table { text-indent: 0; border-color: inherit; border-collapse: collapse; }
+button, input, optgroup, select, textarea {
+  font-family: inherit; font-size: 100%; font-weight: inherit;
+  line-height: inherit; color: inherit; margin: 0; padding: 0;
+}
+button, select { text-transform: none; }
+button, [type='button'], [type='reset'], [type='submit'] {
+  -webkit-appearance: button; background-color: transparent; background-image: none;
+}
+progress { vertical-align: baseline; }
+::-webkit-inner-spin-button, ::-webkit-outer-spin-button { height: auto; }
+[type='search'] { -webkit-appearance: textfield; outline-offset: -2px; }
+::-webkit-search-decoration { -webkit-appearance: none; }
+::-webkit-file-upload-button { -webkit-appearance: button; font: inherit; }
+summary { display: list-item; }
+blockquote, dl, dd, h1, h2, h3, h4, h5, h6, hr, figure, p, pre { margin: 0; }
+fieldset { margin: 0; padding: 0; }
+legend { padding: 0; }
+ol, ul, menu { list-style: none; margin: 0; padding: 0; }
+textarea { resize: vertical; }
+input::placeholder, textarea::placeholder { opacity: 1; color: #9ca3af; }
+button, [role="button"] { cursor: pointer; }
+:disabled { cursor: default; }
+img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; }
+img, video { max-width: 100%; height: auto; }
+[hidden] { display: none; }
+
+/* ===== Theme Variables ===== */
+:root {
+  /* Channel params for opacity variants: oklch(var(--color-X-params) / alpha) */
+  --color-primary-params: 25% 0.005 298;
+  --color-secondary-params: 40% 0.005 298;
+  --color-background-params: 96% 0.005 298;
+  /* Full color values */
+  --color-primary: oklch(var(--color-primary-params));
+  --color-secondary: oklch(var(--color-secondary-params));
+  --color-background: oklch(var(--color-background-params));
+  --color-highlight: oklch(0.93 0.195089 103.2532 / 0.5);
+  /* Admonition colors */
+  --color-note: oklch(48.8% 0.243 264.376 / 0.8);
+  --color-tip: oklch(50.8% 0.118 165.612 / 0.8);
+  --color-important: oklch(49.6% 0.265 301.924 / 0.8);
+  --color-warning: oklch(55.5% 0.163 48.998 / 0.8);
+  --color-caution: oklch(50.5% 0.213 27.518 / 0.8);
+  /* Font families */
+  --font-title: 'Lato', 'EarlySummer-Subset', 'EarlySummer', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-navbar: 'EB Garamond', 'STIX-Italic', serif;
+  --font-time: 'EB Garamond', Georgia, 'Times New Roman', Times, serif;
+  --font-serif: Spectral, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-sans: Lato, ui-sans-serif;
+}
+html.dark {
+  --color-primary-params: 0.96 0.04 40;
+  --color-secondary-params: 0.8 0.04 40;
+  --color-background-params: 0.20 0.036 280;
+  --color-highlight: oklch(0.28 0.05 275);
+  --color-note: oklch(70.7% 0.165 254.624 / 0.8);
+  --color-tip: oklch(76.5% 0.177 163.223 / 0.8);
+  --color-important: oklch(71.4% 0.203 305.504 / 0.8);
+  --color-warning: oklch(82.8% 0.189 84.429 / 0.8);
+  --color-caution: oklch(70.4% 0.191 22.216 / 0.8);
+}
+
+/* ===== Global Utility Classes ===== */
+.font-serif { font-family: var(--font-serif); }
+.font-sans { font-family: var(--font-sans); }
+.font-navbar { font-family: var(--font-navbar); }
+.font-time { font-family: var(--font-time); }
+.font-title { font-family: var(--font-title); }
+.font-italic { font-style: italic; }
+.scroll-smooth { scroll-behavior: smooth; }
+.hidden { display: none; }
+
+/* ===== Custom Shortcuts from uno.config.ts ===== */
+.uno-desktop-column {
+  position: fixed;
+  right: max(5rem, calc(50vw - 35rem));
+  width: 14rem;
+}
+.uno-decorative-line {
+  margin-bottom: 1.125rem;
+  height: 1px;
+  width: 2.5rem;
+  background-color: oklch(var(--color-secondary-params) / 0.25);
+}
+@media (min-width: 1024px) {
+  .uno-decorative-line {
+    margin-bottom: 1.5rem;
+    width: 2.75rem;
+  }
+}
+.uno-round-border {
+  border-width: 1px;
+  border-style: solid;
+  border-color: oklch(var(--color-secondary-params) / 0.05);
+  border-radius: 0.25rem;
+}

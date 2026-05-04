@@ -1,5 +1,4 @@
 import { useRef, useEffect } from 'react'
-import '@/styles/anim.css'
 
 /* ---------------- static image constants ---------------- */
 const L = 32                 // retained DCT modes per axis
@@ -27,12 +26,15 @@ async function initGPU(frameCount) {
 		if (!navigator.gpu) return null
 		const adapter = await navigator.gpu.requestAdapter()
 		if (!adapter) return null
+		// Actual peak usage: outBuf = T*H*W*C*4 ≈ 15 MB. 32 MB gives ~2× slack.
+		const MB32 = 32 * 1024 * 1024
 		device = await adapter.requestDevice({
-			requiredLimits: { maxTextureArrayLayers: frameCount, maxStorageBufferBindingSize: 2147483644,
-				maxBufferSize: 2147483648
+			requiredLimits: {
+				maxStorageBufferBindingSize: MB32,
+				maxBufferSize: MB32,
 			},
 		})
-		
+
 		/* ---------- buffers ---------- */
 		const makeCosBuf = flat => {
 			const b = device.createBuffer({
@@ -50,7 +52,7 @@ async function initGPU(frameCount) {
 		cosVBuf = makeCosBuf(
 			Float32Array.from({ length: H * L }, (_, i) => cosV[i / L | 0][i % L]),
 		)
-		
+
 		coeffBuf = device.createBuffer({
 			size: frameCount * C * KSQ * 4,                // f32 coeffs
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -64,7 +66,7 @@ async function initGPU(frameCount) {
 			size: bytesAll,
 			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
 		})
-		
+
 		/* ---------- WGSL shader (parametrised by frameCount) ---------- */
 		const mod = device.createShaderModule({
 			code: `
@@ -73,18 +75,18 @@ async function initGPU(frameCount) {
         @group(0) @binding(1) var<storage,read>        cosU  : Mat;
         @group(0) @binding(2) var<storage,read>        cosV  : Mat;
         @group(0) @binding(3) var<storage,read_write>  outF  : array<f32>;
-			
+
         const W:u32=${W}; const H:u32=${H}; const L:u32=${L}; const F:u32=${frameCount}; const C:u32=${C};
         const KSQ:u32=${KSQ};
-			
+
         @compute @workgroup_size(16,16,1)
         fn main(@builtin(global_invocation_id) gid:vec3<u32>) {
           let x=gid.x; let y=gid.y; let bc=gid.z;           // block-channel index
           if (x>=W || y>=H) { return; }
-			
+
           let frame = bc / C;                       // 0..F-1
           let chan  = bc % C;                       // 0,1,2
-			
+
           var sum:f32 = 0.0;
           for (var v:u32=0; v<L; v++){
             let cv = cosV.data[y*L+v];
@@ -119,10 +121,10 @@ async function initGPU(frameCount) {
 /* ---------- run ONE dispatch that decodes ALL blocks ---------- */
 async function gpuDecodeAll(coeffF32) {
 	if (!device) return null;                 // GPU not available
-	
+
 	/* upload the whole coefficient tensor */
 	device.queue.writeBuffer(coeffBuf, 0, coeffF32);
-	
+
 	/* encode and submit the compute+copy work */
 	const enc  = device.createCommandEncoder();
 	const pass = enc.beginComputePass();
@@ -133,7 +135,7 @@ async function gpuDecodeAll(coeffF32) {
 	enc.copyBufferToBuffer(outBuf, 0, stagingBuf, 0, bytesAll);
 	device.queue.submit([enc.finish()]);
 	await device.queue.onSubmittedWorkDone();
-	
+
 	/* map the staging buffer and return a copy */
 	await stagingBuf.mapAsync(GPUMapMode.READ);
 	const result = new Float32Array(stagingBuf.getMappedRange()).slice();
@@ -170,14 +172,14 @@ let loadPromise = null
 export function loadAnimData() {
 	if (loadPromise) return loadPromise
 	loadPromise = (async () => {
-		const url = "/assets/anim.bin"
+		const url = '/assets/anim.bin'
 		const bin16 = new Float16Array(await (await fetch(url)).arrayBuffer());
 		const blocks   = bin16.length / KSQ;
 		T = blocks / C;
 		if (!Number.isInteger(T)) throw new Error('corrupt file size')
-			
+
 		/* ---- try GPU path ---- */
-		await initGPU(T);
+		try { await initGPU(T) } catch { /* GPU unavailable, fall through to CPU */ }
 		const coeff32 = Float32Array.from(bin16);
 		let floats  = await gpuDecodeAll(coeff32)
 		if (!floats) {
@@ -187,10 +189,10 @@ export function loadAnimData() {
 				floats.set(cpuDecodeFrame(frame16), f * H * W * C)
 			}
 		}
-		
+
 		const bytes = new Uint8ClampedArray(floats.length);
 		for (let i = 0; i < floats.length; i++) bytes[i] = floats[i] & 255;
-		
+
 		return { bytes, frameCount: T }
 	})()
 	return loadPromise
@@ -200,74 +202,20 @@ export function loadAnimData() {
 /*                     React component (render loop)                    */
 /* =================================================================== */
 
-function rgbToHsv(r, g, b) {
-	r /= 255; g /= 255; b /= 255;
-	const max = Math.max(r, g, b), min = Math.min(r, g, b);
-	const d = max - min;
-	
-	let h = 0;
-	if (d !== 0) {
-		if (max === r) h = ((g - b) / d) % 6;
-		else if (max === g) h = (b - r) / d + 2;
-		else h = (r - g) / d + 4;
-		h *= 60;
-		if (h < 0) h += 360;
-	}
-	
-	const s = max === 0 ? 0 : d / max;
-	const v = max;
-	
-	return [h, s, v];
-}
+const TARGET_FPS  = 20;
+const FRAME_TIME  = 1000 / TARGET_FPS; // 50 ms
+let   nextFrameDue = 0;                // in ms – first frame is immediate
 
-// h in [0, 360), s and v in [0, 1]
-// returns [r, g, b] in [0, 255]
-function hsvToRgb(h, s, v) {
-	const c = v * s;
-	const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-	const m = v - c;
-	
-	let r1, g1, b1;
-	if (h < 60)      [r1, g1, b1] = [c, x, 0];
-	else if (h < 120)[r1, g1, b1] = [x, c, 0];
-	else if (h < 180)[r1, g1, b1] = [0, c, x];
-	else if (h < 240)[r1, g1, b1] = [0, x, c];
-	else if (h < 300)[r1, g1, b1] = [x, 0, c];
-	else             [r1, g1, b1] = [c, 0, x];
-	
-	return [
-		Math.round((r1 + m) * 255),
-		Math.round((g1 + m) * 255),
-		Math.round((b1 + m) * 255),
-	];
-}
+/* persisted across page navigations (module lives for the session) */
+let _savedFrame = 0;
+let _hasShown   = false;
 
-const fixedHue = 40;
-const TARGET_FPS   = 20;
-const FRAME_TIME   = 1000 / TARGET_FPS; // 50 ms
-let   nextFrameDue = 0;                 // in ms – first frame is immediate
-
-function applyFixedHue(imageData) {
-	const data = imageData.data;
-	for (let i = 0; i < data.length; i += 4) {
-		const r = data[i], g = data[i + 1], b = data[i + 2];
-		
-		const [, s, v] = rgbToHsv(r, g, b);  // get brightness
-		const [nr, ng, nb] = hsvToRgb(fixedHue, .5*s, .8*v);
-		
-		data[i] = nr;
-		data[i + 1] = ng;
-		data[i + 2] = nb;
-	}
-	return imageData;
-}
-
-export default function Anim({isAbout = false, isHome = false}) {
+export default function Anim({isAbout = false}) {
 	const canvasRef = useRef(null);
 	const rafRef    = useRef(null);
 	if (isAbout) {
 		return (
-		<div className="animContainer lg:uno-desktop-column w-14em">
+		<div className="animContainer">
 			<img
 			src="/assets/images/headshot.jpg"
 			className="animCanvas"
@@ -276,40 +224,29 @@ export default function Anim({isAbout = false, isHome = false}) {
 		</div>
 		);
 	}
-	
+
 	useEffect(() => {
 		/* visible canvas */
 		const cvs = canvasRef.current;
 		cvs.width = W; cvs.height = H;
 		const ctx = cvs.getContext('2d');
-		
-		/* two off-screen canvases */
-		const colourCvs = document.createElement('canvas');
-		colourCvs.width = W; colourCvs.height = H;
-		const colourCtx = colourCvs.getContext('2d');
-		
-		const tintCvs = document.createElement('canvas');
-		tintCvs.width = W; tintCvs.height = H;
-		const tintCtx = tintCvs.getContext('2d');
-		
+
+		/* off-screen canvas for interpolated frame */
+		const offCvs = document.createElement('canvas');
+		offCvs.width = W; offCvs.height = H;
+		const offCtx = offCvs.getContext('2d');
+
 		/* working ImageData buffer */
 		const img = ctx.createImageData(W, H);
 		const frameSize = W * H * C;
 		const rowStride = W * C;
-		
+
 		let cancelled = false;
-		
-		/* event-driven playback speed (your existing code) */
+
+		/* mouse-driven speed — always document-level */
 		let lastMouseX = null, lastMouseY = null, lastMouseTS = 0;
 		let speed = 1;
-		
-		/* fade bookkeeping */
-		let totalfade = 0;          // 0 → tint, 1 → colour
-		let fade = 0;          // 0 → tint, 1 → colour
-		let fadeTarget = 0;    // where we’re heading (0 or 1)
-		const FADE_RATE = 0.005; // fraction per ms  (≈200 ms total)
-		
-		/* pointer handlers --------------------------------------------------*/
+
 		function handleMove(e) {
 			const now = performance.now();
 			if (lastMouseX !== null) {
@@ -320,37 +257,32 @@ export default function Anim({isAbout = false, isHome = false}) {
 			}
 			lastMouseX = e.clientX; lastMouseY = e.clientY; lastMouseTS = now;
 		}
-		const handleEnter = (e) => { handleMove(e); fadeTarget = 1; };
-		const handleLeave = () => { speed = 1; lastMouseX = lastMouseY = null; fadeTarget = 0; };
-		
-		cvs.addEventListener('mousemove', handleMove);
-		cvs.addEventListener('mouseenter', handleEnter);
-		cvs.addEventListener('mouseleave', handleLeave);
-		
-		/* load your frames */
-		loadAnimData().then(({ bytes, frameCount}) => {
+		document.addEventListener('mousemove', handleMove);
+
+		/* resume from where we left off if the animation has already loaded */
+		loadAnimData().then(({ bytes, frameCount }) => {
 			if (cancelled) return;
-			
-			/* render loop -------------------------------------------------------*/
-			let current = 0;
+
+			let current = _savedFrame;
+			let totalfade = _hasShown ? 1 : 0;
 			let lastTS  = performance.now();
-			
+
 			function tick(ts) {
 				if (ts >= nextFrameDue) {
-					nextFrameDue = ts + FRAME_TIME;   // schedule next heavy run
-					
-					/* === heavy section: decode + interpolate + tint canvases === */
-					// … all your current per-pixel work, colourCtx.putImageData, etc.
+					nextFrameDue = ts + FRAME_TIME;
+
 					const dt = ts - lastTS;
 					lastTS = ts;
-					
+
 					if (lastMouseTS && ts - lastMouseTS > 100) speed = 1;
 					current = (current + dt * 0.005 * speed) % frameCount;
+					_savedFrame = current;
+
 					const i0 = current | 0;
 					const i1 = (i0 + 1) % frameCount;
 					const a  = current - i0;
-					
-					/* ---- decode + interpolate into `img` ---- */
+
+					/* interpolate into img */
 					for (let y = 0; y < H; ++y) {
 						for (let x = 0; x < W; ++x) {
 							const s0 = i0 * frameSize + y * rowStride + x * C;
@@ -361,59 +293,37 @@ export default function Anim({isAbout = false, isHome = false}) {
 							img.data[d + 3] = 255;
 						}
 					}
-					
-					/* ---- push to colour buffer ---- */
-					colourCtx.putImageData(img, 0, 0);
-					
-					/* ---- tint version ---- */
-					const tinted = applyFixedHue(
-						new ImageData(Uint8ClampedArray.from(img.data), W, H));
-					tintCtx.putImageData(isHome ? img : tinted, 0, 0);
-					
-					/* ---- update fade (time-based) ---- */
-					if (fade !== fadeTarget) {
-						const dir = Math.sign(fadeTarget - fade);
-						fade += dir * dt * FADE_RATE;
-						if ((dir > 0 && fade > fadeTarget) ||
-						(dir < 0 && fade < fadeTarget))
-						fade = fadeTarget;
+
+					offCtx.putImageData(img, 0, 0);
+
+					/* fade-in only on first ever load */
+					if (totalfade < 1) {
+						totalfade = Math.min(1, totalfade + 0.3 * dt * 0.005);
+						if (totalfade >= 1) _hasShown = true;
 					}
-					if (totalfade !== 1) {
-						totalfade += .3 * dt * FADE_RATE;
-						if (totalfade < 0)
-							totalfade = 0;
-						if (totalfade > 1)
-							totalfade = 1;
-					}
-					
-					/* ---- composite to visible canvas ---- */
+
 					ctx.clearRect(0, 0, W, H);
 					ctx.globalAlpha = totalfade;
-					ctx.drawImage(tintCvs, 0, 0);
-					ctx.globalAlpha = totalfade*fade;
-					ctx.drawImage(colourCvs, 0, 0);
+					ctx.drawImage(offCvs, 0, 0);
 					ctx.globalAlpha = 1;
 				}
-				
+
 				rafRef.current = requestAnimationFrame(tick);
 			}
-				
+
 			rafRef.current = requestAnimationFrame(tick);
-		});
-			
+		}).catch(() => {});
+
 		return () => {
 			cancelled = true
 			cancelAnimationFrame(rafRef.current)
-			cvs.removeEventListener('mouseenter', handleEnter)
-			cvs.removeEventListener('mousemove', handleMove)
-			cvs.removeEventListener('mouseleave', handleLeave)
+			document.removeEventListener('mousemove', handleMove)
 		}
 	}, [])
-			
+
 	return (
-		<div className="animContainer lg:uno-desktop-column w-14em">
+		<div className="animContainer">
 		<canvas ref={canvasRef} width={W} height={H} className="animCanvas" />
 		</div>
 	)
 }
-		

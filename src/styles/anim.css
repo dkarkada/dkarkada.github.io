@@ -1,27 +1,53 @@
 .animContainer {
   height: 224px;
+  width: 14rem;
 }
 
-@media (max-width:1023px){
-  .animContainer{
+@media (max-width: 1023px) {
+  .animContainer {
     height: 140px;
-    margin:auto; 
+    width: auto;
+    margin: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .animContainer {
+    position: fixed;
+    top: 5rem;
+    right: max(5rem, calc(50vw - 35rem));
   }
 }
 
 .animCanvas {
   display: block;
   height: 224px;
+  width: 100%;
   border-radius: 10%;
   border-color: rgb(7, 4, 39);
   border-width: 3px;
-  background:#4e4c42;
+  background: #4e4c42;
+  object-fit: cover;
 }
 
-@media (max-width:1023px){
-  .animCanvas{
+@media (max-width: 1023px) {
+  .animCanvas {
     height: 128px;
     border-radius: 50%;
-    margin:auto; 
+    margin: auto;
+  }
+}
+
+.toc-sidebar-wrapper {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .toc-sidebar-wrapper {
+    display: block;
+    position: fixed;
+    top: 5rem;
+    right: max(5rem, calc(50vw - 35rem));
+    width: 14rem;
   }
 }

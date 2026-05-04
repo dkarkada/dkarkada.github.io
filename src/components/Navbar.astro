@@ -6,42 +6,22 @@ const { isHome, isPost, isTag} = getPageInfo(Astro.url.pathname)
 const isPostActive = isHome || isPost
 const isTagActive = isTag
 
-
-
-function getNavItemClass(isActive: boolean) {
-  return isActive
-    ? 'highlight-static c-primary font-bold after:bottom-0.7em'
-    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold)'
-}
-
 const navItems = [
-  {
-    href: '/',
-    label: 'Posts',
-    className: getNavItemClass(isPostActive),
-  },
-  {
-    href: '/tags/',
-    label: 'Tags',
-    className: getNavItemClass(isTagActive),
-  },
+  { href: '/', label: 'Posts', active: isPostActive },
+  { href: '/tags/', label: 'Tags', active: isTagActive },
 ]
 ---
 
 <nav
   aria-label="Site Navigation"
-  class:list={[
-    isPost ? 'hidden lg:block' : '',
-    'mb-10.5 text-3.6 font-semibold leading-2.45em font-navbar font-italic',
-    'lg:(uno-desktop-column text-5 bottom-[min(9.04rem+3.85vw,10.5rem)])',
-  ]}
+  class:list={[{ 'post-page': isPost }]}
 >
   <ul>
     {navItems.map(item => (
       <li>
         <a
           href={getCleanPath(item.href)}
-          class={item.className}
+          class:list={[item.active ? 'nav-active' : 'nav-inactive']}
         >
           {item.label}
         </a>
@@ -49,3 +29,75 @@ const navItems = [
     ))}
   </ul>
 </nav>
+
+<style>
+nav {
+  margin-bottom: 2.625rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 2.45em;
+  font-family: var(--font-navbar);
+  font-style: italic;
+}
+nav.post-page { display: none; }
+@media (min-width: 1024px) {
+  nav {
+    position: fixed;
+    right: max(5rem, calc(50vw - 35rem));
+    width: 14rem;
+    font-size: 1.25rem;
+    bottom: min(9.04rem + 3.85vw, 10.5rem);
+  }
+  nav.post-page { display: block; }
+}
+
+/* Nav links */
+a {
+  position: relative;
+  display: inline-block;
+}
+a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  z-index: -1;
+  height: 0.5em;
+  width: 100%;
+  background-color: var(--color-highlight);
+  bottom: 0.7em;
+}
+
+/* Active link */
+a.nav-active {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+a.nav-active::after {
+  transform-origin: bottom left;
+  transform: scaleX(1);
+}
+
+/* Inactive link hover */
+a.nav-inactive {
+  transition-property: color, font-weight;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+a.nav-inactive::after {
+  transform-origin: bottom right;
+  transform: scaleX(0);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+@media (min-width: 1024px) {
+  a.nav-inactive::after { transition-duration: 300ms; }
+}
+a.nav-inactive:hover {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+a.nav-inactive:hover::after {
+  transform-origin: bottom left;
+  transform: scaleX(1);
+}
+</style>

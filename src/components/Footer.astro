@@ -2,43 +2,78 @@
 import { themeConfig } from '@/config'
 
 const { author } = themeConfig.site
-const { links: socialLinks, startYear } = themeConfig.footer
+const { links: socialLinks } = themeConfig.footer
 
 const currentYear = new Date().getFullYear()
-const year = Number(startYear) === currentYear ? startYear : `${startYear}-${currentYear}`
 
 const links = socialLinks.map(({ name, url, ...rest }) => {
-  if (name === 'RSS') {
-    return { name, url: url, ...rest }
-  }
-
-  if (name === 'Email') {
-    return { name, url: url.startsWith('mailto:') ? url : `mailto:${url}`, ...rest }
-  }
-
+  if (name === 'RSS') return { name, url, ...rest }
+  if (name === 'Email') return { name, url: url.startsWith('mailto:') ? url : `mailto:${url}`, ...rest }
   return { name, url, ...rest }
 })
-
-const footerLinkClass = 'highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary'
 ---
 
-<footer
-  class="text-3 leading-1.25em font-navbar lg:text-3.5"
-  lg="uno-desktop-column bottom-20"
->
+<footer>
   <p>
     {links.map((link, index) => (
       <>
-        <a class={footerLinkClass} href={link.url} target="_blank" rel="noopener noreferrer">{link.name}</a>&nbsp;{index < links.length - 1 && '/'}
+        <a class="footer-link" href={link.url} target="_blank" rel="noopener noreferrer">{link.name}</a>&nbsp;{index < links.length - 1 && '/'}
       </>
     ))}
   </p>
-
-  <p>
-    © {year} {author}
-  </p>
-
-  <p>
-    Powered by <a class={footerLinkClass} href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a> and <a class={footerLinkClass} href="https://github.com/radishzzz/astro-theme-retypeset" target="_blank" rel="noopener noreferrer">Retypeset</a>
-  </p>
+  <p>© {currentYear} {author}</p>
+  <!-- <p>
+    Powered by <a class="footer-link" href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a> and <a class="footer-link" href="https://github.com/radishzzz/astro-theme-retypeset" target="_blank" rel="noopener noreferrer">Retypeset</a>
+  </p> -->
 </footer>
+
+<style>
+footer {
+  font-size: 0.75rem;
+  line-height: 1.25em;
+  font-family: var(--font-navbar);
+}
+@media (min-width: 1024px) {
+  footer {
+    position: fixed;
+    right: max(5rem, calc(50vw - 35rem));
+    width: 14rem;
+    bottom: 5rem;
+    font-size: 0.875rem;
+  }
+}
+
+.footer-link {
+  position: relative;
+  display: inline-block;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  transition-property: color;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.footer-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  z-index: -1;
+  height: 0.5em;
+  width: 100%;
+  background-color: var(--color-highlight);
+  bottom: 0.35em;
+  transform-origin: bottom right;
+  transform: scaleX(0);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+@media (min-width: 1024px) {
+  .footer-link::after { transition-duration: 300ms; }
+}
+.footer-link:hover {
+  color: var(--color-primary);
+}
+.footer-link:hover::after {
+  transform-origin: bottom left;
+  transform: scaleX(1);
+}
+</style>

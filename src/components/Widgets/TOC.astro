@@ -4,64 +4,45 @@ import TocIcon from '@/assets/icons/toc-icon.svg'
 
 interface Props {
   headings: MarkdownHeading[]
+  sidebar?: boolean
 }
 
-const { headings = [] } = Astro.props
+const { headings = [], sidebar = false } = Astro.props
 const filteredHeadings = headings.filter(heading =>
-  heading.depth >= 2
-  && heading.depth <= 4,
+  heading.depth >= 2 && heading.depth <= 4,
 )
 ---
 
 {filteredHeadings.length > 0 && (
-  // TOC Container
-  <div
-    id="toc-container"
-    class="mb-6 uno-round-border bg-secondary/5 2xl:(fixed left-0 top-44.5 max-w-[min(calc(50vw-38rem),13rem)] border-none bg-secondary/0)"
-  >
-    {/* Hidden Checkbox */}
-    <input
-      type="checkbox"
-      id="toc-toggle"
-      hidden
-    />
-    {/* TOC Toggle */}
-    <div class="relative h-12 w-full">
-      <label
-        for="toc-toggle"
-        class="absolute inset-0 flex cursor-pointer items-center 2xl:(static flex c-secondary/40 transition-colors ease-out hover:c-secondary/80)"
-      >
-        {/* Title on Mobile */}
-        <span id="toc-mobile-text">
-          {"Table of Contents"}
-        </span>
+  <div id="toc-container" class:list={[{ 'toc-sidebar-mode': sidebar }]} data-sidebar={sidebar ? 'true' : 'false'}>
+    <input type="checkbox" id="toc-toggle" hidden />
 
-        {/* Icon on Desktop */}
+    <div class="toc-toggle-row">
+      <label for="toc-toggle" class="toc-label">
+        <span id="toc-mobile-text">Table of Contents</span>
         <TocIcon
           id="toc-desktop-icon"
           aria-hidden="true"
-          class="ml-4 hidden aspect-square w-4.2 2xl:(mt-4 block origin-center active:scale-90!)"
+          class="toc-desktop-icon"
           fill="currentColor"
         />
       </label>
     </div>
 
-    {/* Expandable Content Wrapper with Accordion Animation */}
     <div id="toc-accordion-wrapper">
-      <nav
-        id="toc-accordion-content"
-        aria-label="Table of Contents"
-      >
-        {/* TOC List */}
+      <nav id="toc-accordion-content" aria-label="Table of Contents">
         <ul id="toc-links-list">
+          <li class="indent-0">
+            <a href="#" id="toc-top-link" class="toc-links-h2 highlight-hover">
+              (Top of page)
+            </a>
+          </li>
           {filteredHeadings.map(heading => (
-            <li
-              class:list={{
-                'ml-0': heading.depth === 2,
-                'ml-4': heading.depth === 3,
-                'ml-8': heading.depth === 4,
-              }}
-            >
+            <li class:list={{
+              'indent-0': heading.depth === 2,
+              'indent-4': heading.depth === 3,
+              'indent-8': heading.depth === 4,
+            }}>
               <a
                 href={`#${heading.slug}`}
                 class:list={[
@@ -80,99 +61,247 @@ const filteredHeadings = headings.filter(heading =>
   </div>
 )}
 
-<!-- Override heti default styles  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <style>
-#toc-mobile-text {
-  --at-apply: 'ml-4 font-semibold 2xl:hidden';
+#toc-container {
+  margin-bottom: 1.5rem;
+  border-width: 1px;
+  border-style: solid;
+  border-color: oklch(var(--color-secondary-params) / 0.05);
+  border-radius: 0.25rem;
+  background-color: oklch(var(--color-secondary-params) / 0.05);
 }
-#toc-links-list {
-  --at-apply: 'mb-2.5 mt-1 list-none pl-0 2xl:(mb-1 space-y-1) space-y-1.1';
-}
-.toc-links-h2, .toc-links-h3, .toc-links-h4 {
-  --at-apply: 'text-balance text-sm font-normal no-underline after:bottom-0.15em 2xl:(text-3.2 c-secondary/25)';
-  transition: color 0.15s ease-out, font-weight 0.15s ease-out;
-}
-.toc-link-active {
-  --at-apply: 'c-secondary/80 font-medium';
+@media (min-width: 1536px) {
+  #toc-container:not(.toc-sidebar-mode) {
+    position: fixed;
+    left: 0;
+    top: 11.125rem;
+    max-width: min(calc(50vw - 38rem), 13rem);
+    border: none;
+    background-color: transparent;
+  }
 }
 
-/* Hover Effect */
-#toc-container:hover :is(.toc-links-h2, .toc-links-h3, .toc-links-h4) {
-  --at-apply: '2xl:(c-secondary/60 hover:c-primary) hover:(c-secondary font-medium)';
+/* Sidebar mode: always expanded, no visible container */
+@media (min-width: 1024px) {
+  #toc-container.toc-sidebar-mode {
+    border: none;
+    background-color: transparent;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+  .toc-sidebar-mode .toc-toggle-row { display: none; }
+  .toc-sidebar-mode #toc-accordion-wrapper,
+  .toc-sidebar-mode #toc-toggle:checked ~ #toc-accordion-wrapper {
+    grid-template-rows: 1fr;
+  }
+  .toc-sidebar-mode #toc-accordion-content {
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+    padding-top: 0.25rem;
+  }
+  .toc-sidebar-mode :is(.toc-links-h2, .toc-links-h3, .toc-links-h4) {
+    font-size: 0.8rem;
+    color: oklch(var(--color-secondary-params) / 0.5);
+  }
+  .toc-sidebar-mode :is(.toc-links-h2, .toc-links-h3, .toc-links-h4):hover {
+    color: var(--color-primary);
+  }
+  .toc-sidebar-mode .toc-link-active {
+    color: var(--color-primary);
+    font-weight: 400;
+  }
+  .toc-sidebar-mode #toc-links-list { margin-bottom: 0.25rem; margin-top: 0; }
+  .toc-sidebar-mode #toc-links-list > * + * { margin-top: 0.25rem; }
 }
-#toc-container:hover .toc-link-active {
-  --at-apply: '2xl:c-primary';
+
+.toc-toggle-row {
+  position: relative;
+  height: 3rem;
+  width: 100%;
+}
+
+.toc-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+}
+@media (min-width: 1536px) {
+  .toc-label {
+    position: static;
+    display: flex;
+    color: oklch(var(--color-secondary-params) / 0.4);
+    transition-property: color;
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+  .toc-label:hover {
+    color: oklch(var(--color-secondary-params) / 0.8);
+  }
+}
+
+#toc-mobile-text {
+  margin-left: 1rem;
+  font-weight: 600;
+}
+@media (min-width: 1536px) {
+  #toc-mobile-text { display: none; }
+}
+
+.toc-desktop-icon {
+  margin-left: 1rem;
+  display: none;
+  aspect-ratio: 1 / 1;
+  width: 1.05rem;
+}
+@media (min-width: 1536px) {
+  .toc-desktop-icon {
+    margin-top: 1rem;
+    display: block;
+    transform-origin: center;
+  }
+  .toc-desktop-icon:active {
+    transform: scale(0.9) !important;
+  }
+}
+
+.indent-0 { margin-left: 0; }
+.indent-4 { margin-left: 1rem; }
+.indent-8 { margin-left: 2rem; }
+
+.toc-links-h2, .toc-links-h3, .toc-links-h4 {
+  text-wrap: balance;
+  font-size: 0.875rem;
+  font-weight: 400;
+  text-decoration-line: none;
+  transition: color 0.15s ease-out, font-weight 0.15s ease-out;
+}
+/* Override highlight-hover ::after position */
+.toc-links-h2::after, .toc-links-h3::after, .toc-links-h4::after {
+  bottom: 0.15em;
+}
+@media (min-width: 1536px) {
+  .toc-links-h2, .toc-links-h3, .toc-links-h4 {
+    font-size: 0.8rem;
+    color: oklch(var(--color-secondary-params) / 0.25);
+  }
+}
+
+.toc-link-active {
+  color: oklch(var(--color-secondary-params) / 0.8);
+}
+
+/* Hover effects on desktop */
+@media (min-width: 1536px) {
+  #toc-container:hover :is(.toc-links-h2, .toc-links-h3, .toc-links-h4) {
+    color: oklch(var(--color-secondary-params) / 0.6);
+  }
+  #toc-container:hover :is(.toc-links-h2, .toc-links-h3, .toc-links-h4):hover {
+    color: var(--color-primary);
+  }
+  #toc-container:hover .toc-link-active {
+    color: var(--color-primary);
+  }
 }
 
 /* Overflow and Scrollbar */
 #toc-toggle:checked ~ #toc-accordion-wrapper #toc-accordion-content {
-  --at-apply: 'overflow-y-auto 2xl:overflow-hidden';
+  overflow-y: auto;
 }
-#toc-accordion-content {
-  --at-apply: 'max-h-59.3 overflow-hidden pl-4 pr-6 2xl:(max-h-[calc(100vh-26.75rem)] overflow-y-auto scrollbar-hidden)';
-  scrollbar-width: thin;
-  scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
-}
-#toc-accordion-content::-webkit-scrollbar {
-  --at-apply: 'hidden';
+@media (min-width: 1536px) {
+  #toc-toggle:checked ~ #toc-accordion-wrapper #toc-accordion-content {
+    overflow: hidden;
+  }
 }
 
-/* Mobile Initial State */
+#toc-accordion-content {
+  max-height: 14.825rem;
+  overflow: hidden;
+  padding-left: 1rem;
+  padding-right: 1.5rem;
+  scrollbar-width: none;
+  scrollbar-color: oklch(var(--color-secondary-params) / 0.15) transparent;
+}
+#toc-accordion-content::-webkit-scrollbar { display: none; }
+@media (min-width: 1536px) {
+  #toc-accordion-content {
+    max-height: calc(100vh - 26.75rem);
+    overflow-y: auto;
+  }
+}
+
+#toc-links-list {
+  margin-bottom: 0.625rem;
+  margin-top: 0.25rem;
+  list-style: none;
+  padding-left: 0;
+}
+/* space-y-1.1 equivalent */
+#toc-links-list > * + * { margin-top: 0.275rem; }
+@media (min-width: 1536px) {
+  #toc-links-list { margin-bottom: 0.25rem; }
+  #toc-links-list > * + * { margin-top: 0.25rem; }
+}
+
+/* Mobile accordion */
 #toc-accordion-wrapper {
-  --at-apply: 'grid rows-[0fr]';
+  display: grid;
+  grid-template-rows: 0fr;
   transition: grid-template-rows 0.3s ease-in-out;
 }
 #toc-toggle:checked ~ #toc-accordion-wrapper {
-  --at-apply: 'rows-[1fr]';
+  grid-template-rows: 1fr;
 }
 
-/* Desktop Initial State */
-#toc-accordion-wrapper {
-  --at-apply: '2xl:rows-[1fr]';
-}
-#toc-toggle:checked ~ #toc-accordion-wrapper {
-  --at-apply: '2xl:rows-[0fr]';
+/* Desktop: inverted — show by default, hide when checked */
+@media (min-width: 1536px) {
+  #toc-accordion-wrapper { grid-template-rows: 1fr; }
+  #toc-toggle:checked ~ #toc-accordion-wrapper { grid-template-rows: 0fr; }
 }
 </style>
 
-<!-- TOC Highlight Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <script>
 function setupTOCHighlight() {
-  const is2xl = window.innerWidth >= 1536
-  if (!is2xl) {
-    return
-  }
+  const container = document.getElementById('toc-container')
+  const breakpoint = container?.dataset.sidebar === 'true' ? 1024 : 1536
+  if (window.innerWidth < breakpoint) return
 
   const tocContent = document.getElementById('toc-accordion-content')
-  if (!tocContent) {
-    return
-  }
+  if (!tocContent) return
+
+  const topLink = document.getElementById('toc-top-link') as HTMLAnchorElement | null
+
+  // Smooth-scroll to top and clean up the hash
+  topLink?.addEventListener('click', (e) => {
+    e.preventDefault()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
 
   const tocLinksCollection = tocContent.getElementsByTagName('a')
-  if (tocLinksCollection.length === 0) {
-    return
-  }
+  if (tocLinksCollection.length === 0) return
 
+  // Heading links only (exclude the top link)
   const tocLinks = Array.from(tocLinksCollection, item => item as HTMLAnchorElement)
+    .filter(link => link.id !== 'toc-top-link')
 
-  // Determine the top level heading class
-  const hasH2Headings = tocLinks.some(linkItem =>
-    linkItem.classList.contains('toc-links-h2'),
-  )
+  const hasH2Headings = tocLinks.some(linkItem => linkItem.classList.contains('toc-links-h2'))
   const topLevelClass = hasH2Headings ? 'toc-links-h2' : 'toc-links-h3'
 
-  // Build the heading map with the more efficient forEach approach
   const headingMap = new Map<string, HTMLAnchorElement>()
   tocLinks.forEach((link) => {
     const id = link.getAttribute('href')?.substring(1)
-    if (id) {
-      headingMap.set(id, link)
-    }
+    if (id) headingMap.set(id, link)
   })
 
   let currentActiveLink: HTMLAnchorElement | null = null
 
-  // Find and highlight the nearest parent heading
+  function clearAllActive() {
+    tocLinks.forEach(linkItem => linkItem.classList.remove('toc-link-active'))
+    topLink?.classList.remove('toc-link-active')
+    currentActiveLink = null
+  }
+
   function findAndHighlightParent(childElement: HTMLAnchorElement): void {
     const currentIndex = tocLinks.indexOf(childElement)
     for (let i = currentIndex - 1; i >= 0; i--) {
@@ -185,87 +314,71 @@ function setupTOCHighlight() {
   }
 
   function highlightLink(linkElement: HTMLAnchorElement) {
-    if (linkElement === currentActiveLink) {
-      return
-    }
-
-    // Clear all highlights
-    tocLinks.forEach((linkItem) => {
-      linkItem.classList.remove('toc-link-active')
-    })
-
-    // Highlight current link
+    if (linkElement === currentActiveLink) return
+    clearAllActive()
     linkElement.classList.add('toc-link-active')
-
-    // If not a top level heading, find and highlight the parent heading
-    if (!linkElement.classList.contains(topLevelClass)) {
+    if (linkElement !== topLink && !linkElement.classList.contains(topLevelClass)) {
       findAndHighlightParent(linkElement)
     }
-
     currentActiveLink = linkElement
-
-    // Scroll to center position
-    linkElement.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-    })
+    linkElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
 
-  // Intersection observer callback
   const intersectionCallback = (entries: IntersectionObserverEntry[]) => {
     const headingId = entries.find(entry => entry.isIntersecting)?.target?.id
     if (headingId) {
       const link = headingMap.get(headingId)
-      if (link) {
-        highlightLink(link)
-      }
+      if (link) highlightLink(link)
     }
   }
 
-  // Create the intersection observer
   const headingObserver = new IntersectionObserver(intersectionCallback, {
     rootMargin: '0% 0% -66% 0%',
     threshold: [0.4],
   })
 
-  // Observe all heading elements
-  Array.from(document.querySelectorAll('h2, h3, h4'))
+  const headingElements = Array.from(document.querySelectorAll('h2, h3, h4'))
     .filter(heading => heading.id && heading.id !== 'footnotes')
-    .forEach(heading => headingObserver.observe(heading))
 
-  // Highlight the first TOC item by default
-  if (tocLinks.length > 0) {
+  headingElements.forEach(heading => headingObserver.observe(heading))
+
+  // Activate the top link when the first heading hasn't entered the observer zone yet.
+  // The zone threshold matches headingObserver's rootMargin (-66% bottom = top 34%).
+  const firstHeading = headingElements[0] as HTMLElement | undefined
+  if (topLink && firstHeading) {
+    let rafScheduled = false
+    const checkTopLink = () => {
+      if (rafScheduled) return
+      rafScheduled = true
+      requestAnimationFrame(() => {
+        rafScheduled = false
+        const threshold = window.innerHeight * 0.34
+        if (firstHeading.getBoundingClientRect().top > threshold) {
+          if (currentActiveLink !== topLink) highlightLink(topLink)
+        }
+      })
+    }
+    document.addEventListener('scroll', checkTopLink, { passive: true })
+    checkTopLink()
+  } else if (tocLinks.length > 0) {
     highlightLink(tocLinks[0])
   }
 
   const postContent = document.getElementById('gsap-post-content')
   const lastContentElement = postContent?.lastElementChild
+  if (!postContent || !lastContentElement) return
 
-  // Exit if no content elements
-  if (!postContent || !lastContentElement) {
-    return
-  }
-
-  // Create observer to monitor the last element
   const contentEndObserver = new IntersectionObserver(
     (entries) => {
-      // Clear highlights when scrolled past content
       if (!entries[0].isIntersecting && entries[0].boundingClientRect.top < 0) {
-        tocLinks.forEach(linkItem => linkItem.classList.remove('toc-link-active'))
-        currentActiveLink = null
+        clearAllActive()
       }
     },
-    {
-      rootMargin: '0px 0px 0px 0px',
-      threshold: 0,
-    },
+    { rootMargin: '0px 0px 0px 0px', threshold: 0 },
   )
-
-  // Observe last content element
   contentEndObserver.observe(lastContentElement)
 }
 
 setupTOCHighlight()
 document.addEventListener('astro:after-swap', setupTOCHighlight)
 </script>
-

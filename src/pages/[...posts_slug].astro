@@ -5,7 +5,6 @@ import Comments from '@/components/Comments/index.astro'
 import PostDate from '@/components/PostDate.astro'
 import TagsWrapper from '@/components/TagsWrapper.astro'
 import BackButton from '@/components/Widgets/BackButton.astro'
-import TOC from '@/components/Widgets/TOC.astro'
 import { defaultLocale, moreLocales } from '@/config'
 import Layout from '@/layouts/Layout.astro'
 import { checkPostSlugDuplication } from '@/utils/content'
@@ -14,47 +13,37 @@ import { generateDescription } from '@/utils/description'
 export async function getStaticPaths() {
   const posts = await getCollection('posts')
 
-  // Check if there are duplicate post slugs
   const duplicates = await checkPostSlugDuplication(posts)
   if (duplicates.length > 0) {
     throw new Error(`Duplicate post slugs:\n${duplicates.join('\n')}`)
   }
-  
+
   type PathItem = {
     params: { posts_slug: string }
-    props: { post: any}
+    props: { post: any }
   }
 
   const paths: PathItem[] = []
 
-  // Default locale
   posts.forEach((post: CollectionEntry<'posts'>) => {
-    // Show drafts in dev mode only
     if ((import.meta.env.DEV || !post.data.draft)
       && (post.data.lang === defaultLocale || post.data.lang === '')) {
       const slug = post.data.abbrlink || post.id
-
       paths.push({
         params: { posts_slug: `posts/${slug}/` },
-        props: {
-          post,
-        },
+        props: { post },
       })
     }
   })
 
-  // More locales
   moreLocales.forEach((lang: string) => {
     posts.forEach((post: CollectionEntry<'posts'>) => {
-      // Process posts with matching language or no language specified
       if ((import.meta.env.DEV || !post.data.draft)
         && (post.data.lang === lang || post.data.lang === '')) {
         const slug = post.data.abbrlink || post.id
         paths.push({
           params: { posts_slug: `${lang}/posts/${slug}/` },
-          props: {
-            post,
-          },
+          props: { post },
         })
       }
     })
@@ -72,12 +61,12 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post)
   postTitle={post.data.title}
   postDescription={description}
   postSlug={post.id}
+  postAbbrlink={post.data.abbrlink}
+  headings={headings}
 >
-  <article class="heti mb-12.6">
-    <div class="relative">
-      <!-- Go Back Button On Desktop -->
+  <article class="heti post-article">
+    <div class="post-title-area">
       <BackButton />
-      <!-- Title -->
       <h1 class="post-title">
         <span
           transition:name={`post-${post.data.abbrlink || post.id}`}
@@ -88,10 +77,9 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post)
       </h1>
     </div>
 
-    <!-- Date -->
     <div
       id="gsap-post-date"
-      class="mb-17.2 block c-primary font-time"
+      class="post-date"
       transition:name={`time-${post.data.abbrlink || post.id}`}
       data-disable-theme-transition
     >
@@ -101,23 +89,29 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post)
         minutes={remarkPluginFrontmatter.minutes}
       />
     </div>
-    <!-- TOC -->
-    {post.data.toc && <TOC headings={headings} />}
-    <!-- Content -->
-     <div id="gsap-post-content">
+
+    <div id="gsap-post-content">
       <Content />
     </div>
   </article>
 
-  <!-- Tags -->
   {post.data.tags?.length > 0 && (
     <div id="gsap-post-tags">
       <div class="uno-decorative-line"></div>
-      <TagsWrapper
-        tags={post.data.tags}
-      />
+      <TagsWrapper tags={post.data.tags} />
     </div>
   )}
-  <!-- Comments -->
+
   <Comments />
 </Layout>
+
+<style>
+.post-article { margin-bottom: 3.15rem; }
+.post-title-area { position: relative; }
+.post-date {
+  display: block;
+  margin-bottom: 4.3rem;
+  color: var(--color-primary);
+  font-family: var(--font-time);
+}
+</style>

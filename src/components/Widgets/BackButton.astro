@@ -2,34 +2,37 @@
 import GoBackIcon from '@/assets/icons/go-back.svg';
 ---
 
-<button
+<a
   id="back-button"
-  class="hidden"
-  lg="absolute left--10 top-3.8 block aspect-square w-4.5 c-secondary/40 transition-colors ease-out hover:c-secondary/80 active:scale-90!"
-  aria-label="Go back"
+  href="/"
+  aria-label="Go back to home"
 >
-  <GoBackIcon
-    aria-hidden="true"
-    fill="currentColor"
-  />
-</button>
+  <GoBackIcon aria-hidden="true" fill="currentColor" />
+</a>
 
-<!-- Go Back Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
-<script>
-function setupBackButton() {
-  document.getElementById('back-button')?.addEventListener('click', () => {
-    // Navigate back if history exists
-    if (window.history.length > 1) {
-      window.history.back()
-    }
-    else {
-      // Fallback to homepage
-      const siteTitleLink = document.getElementById('site-title-link')
-      siteTitleLink?.click()
-    }
-  })
+<style>
+#back-button {
+  display: none;
 }
-
-setupBackButton()
-document.addEventListener('astro:after-swap', setupBackButton)
-</script>
+@media (min-width: 1024px) {
+  #back-button {
+    display: block;
+    position: absolute;
+    left: -2.5rem;
+    top: 0.95rem;
+    aspect-ratio: 1 / 1;
+    width: 1.125rem;
+    color: oklch(var(--color-secondary-params) / 0.4);
+    transition-property: color;
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    transition-duration: 150ms;
+    cursor: pointer;
+  }
+  #back-button:hover {
+    color: oklch(var(--color-secondary-params) / 0.8);
+  }
+  #back-button:active {
+    transform: scale(0.9) !important;
+  }
+}
+</style>

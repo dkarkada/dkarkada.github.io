@@ -1,5 +1,4 @@
 ---
-
 interface Props {
   tags: string[]
   currentTag?: string
@@ -8,27 +7,62 @@ interface Props {
 const { tags, currentTag = '' } = Astro.props;
 ---
 
-<div class="flex flex-wrap gap-x-3 gap-y-3.2">
+<div class="tags-wrapper">
   {tags.map(tag => (
     <a
       href={`/tags/${tag}/`}
-      class:list={[
-        currentTag === tag
-          ? 'border-secondary/80 c-primary font-medium ring-0.2'
-          : 'ring-0',
-          'relative inline-block border border-secondary/25 rounded-full px-3.2 py-0.7 ring-secondary/80',
-          'transition-[colors,box-shadow] ease-out hover:(border-secondary/80 c-primary font-medium ring-0.2)',
-      ]}
+      class:list={['tag-link', { 'tag-active': currentTag === tag }]}
     >
-      <span class="absolute inset-0 flex items-center justify-center whitespace-nowrap transition-font-weight">
-        {tag}
-      </span>
-      <span
-        class="inline-block font-medium opacity-0"
-        aria-hidden="true"
-      >
-        {tag}
-      </span>
+      <span class="tag-label">{tag}</span>
+      <span class="tag-sizer" aria-hidden="true">{tag}</span>
     </a>
   ))}
 </div>
+
+<style>
+.tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.75rem;
+  row-gap: 0.8rem;
+}
+
+.tag-link {
+  position: relative;
+  display: inline-block;
+  border-width: 1px;
+  border-style: solid;
+  border-color: oklch(var(--color-secondary-params) / 0.25);
+  border-radius: 9999px;
+  padding: 0.175rem 0.8rem;
+  box-shadow: none;
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tag-link:hover,
+.tag-link.tag-active {
+  border-color: oklch(var(--color-secondary-params) / 0.8);
+  color: var(--color-primary);
+  font-weight: 500;
+  box-shadow: 0 0 0 1px oklch(var(--color-secondary-params) / 0.8);
+}
+
+/* Sizer trick: invisible bold text reserves space so layout doesn't shift on hover */
+.tag-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition-property: font-weight;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tag-sizer {
+  display: inline-block;
+  font-weight: 500;
+  opacity: 0;
+}
+</style>

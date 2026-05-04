@@ -22,41 +22,30 @@ export interface Props {
 }
 
 function getPostPath(post: Post) {
-  // Prioritize abbrlink over slug
   const postPath = post.data.abbrlink || post.id
-
-  // If default language, return root path
-  if (lang === defaultLocale) {
-    return `/posts/${postPath}/`
-  }
-
-  // Add language prefix for non-default languages
+  if (lang === defaultLocale) return `/posts/${postPath}/`
   return `/${lang}/posts/${postPath}/`
 }
 ---
 
 <ul>
   {posts.map(post => (
-    <li
-      class="mb-5.5"
-      lg={isHome ? 'mb-10' : ''}
-    >
+    <li class:list={['post-item', { 'home-item': isHome }]}>
 
       {/* post title */}
-      <h3 class="inline transition-colors hover:c-primary">
+      <h3 class="post-title-wrapper">
 
         {/* pinned icon */}
         {pinned && (
-        <PinIcon
+          <PinIcon
             aria-hidden="true"
-            class="mr-0.5em inline-block aspect-square w-0.98em translate-y--0.1em lg:(w-1.05em translate-y--0.15em)"
+            class="pin-icon"
             fill="currentColor"
-        />
+          />
         )}
 
         <a
-          class="text-5.5 font-serif"
-          lg={isHome ? 'font-medium text-4.5' : ''}
+          class:list={['post-link', { 'home-link': isHome }]}
           href={getPostPath(post)}
           transition:name={`post-${post.data.abbrlink || post.id}${lang ? `-${lang}` : ''}`}
           data-disable-theme-transition
@@ -67,38 +56,100 @@ function getPostPath(post: Post) {
 
       {/* mobile post time */}
       {post.data.showdate && (
-      <div
-        class="py-0.8 text-3.5 font-time lg:hidden"
-        transition:name={`time-${post.data.abbrlink || post.id}${lang ? `-${lang}` : ''}`}
-        data-disable-theme-transition
-      >
-        <PostDate
-          date={post.data.published}
-          minutes={post.remarkPluginFrontmatter.minutes}
-        />
-      </div>
+        <div
+          class="post-time-mobile"
+          transition:name={`time-${post.data.abbrlink || post.id}${lang ? `-${lang}` : ''}`}
+          data-disable-theme-transition
+        >
+          <PostDate
+            date={post.data.published}
+            minutes={post.remarkPluginFrontmatter.minutes}
+          />
+        </div>
       )}
 
       {/* desktop post time */}
       {post.data.showdate && (
-      <div class="hidden text-4 font-time lg:(ml-2.5 inline)">
-        <PostDate
-          date={post.data.published}
-          minutes={post.remarkPluginFrontmatter.minutes}
-        />
-      </div>
+        <div class="post-time-desktop">
+          <PostDate
+            date={post.data.published}
+            minutes={post.remarkPluginFrontmatter.minutes}
+          />
+        </div>
       )}
 
       {/* desktop post description */}
       {isHome && (
-        <div
-          class="heti hidden"
-          lg="block"
-        >
-          <p class="text-4 leading-5 font-italic op-60">{generateDescription(post, 'list')}</p>
+        <div class="post-desc heti">
+          <p class="post-desc-text">{generateDescription(post, 'list')}</p>
         </div>
       )}
 
     </li>
   ))}
 </ul>
+
+<style>
+.post-item { margin-bottom: 1.375rem; }
+@media (min-width: 1024px) {
+  .post-item.home-item { margin-bottom: 2.5rem; }
+}
+
+.post-title-wrapper {
+  display: inline;
+  transition-property: color;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.post-title-wrapper:hover { color: var(--color-primary); }
+
+.pin-icon {
+  margin-right: 0.5em;
+  display: inline-block;
+  aspect-ratio: 1 / 1;
+  width: 0.98em;
+  transform: translateY(-0.1em);
+}
+@media (min-width: 1024px) {
+  .pin-icon { width: 1.05em; transform: translateY(-0.15em); }
+}
+
+.post-link {
+  font-size: 1.375rem;
+  font-family: var(--font-serif);
+}
+@media (min-width: 1024px) {
+  .post-link.home-link { font-weight: 500; font-size: 1.125rem; }
+}
+
+.post-time-mobile {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  font-size: 0.875rem;
+  font-family: var(--font-time);
+}
+@media (min-width: 1024px) {
+  .post-time-mobile { display: none; }
+}
+
+.post-time-desktop {
+  display: none;
+  font-size: 1rem;
+  font-family: var(--font-time);
+}
+@media (min-width: 1024px) {
+  .post-time-desktop { display: inline; margin-left: 0.625rem; }
+}
+
+.post-desc { display: none; }
+@media (min-width: 1024px) {
+  .post-desc { display: block; }
+}
+
+.post-desc-text {
+  font-size: 1rem !important;
+  line-height: 1.25rem !important;
+  font-style: italic;
+  opacity: 0.6;
+}
+</style>

@@ -11,9 +11,29 @@ showdate: false
 
 Here are some findings from the research I've worked on.
 
+## Symmetry in language statistics drive representational manifolds
+
+[Paper link.](https://arxiv.org/abs/2602.15029)
+
+The internal representations learned by language models consistently exhibit striking geometric structure: calendar months organize into a circle, historical years form a smooth one-dimensional manifold, and cities' latitudes and longitudes can be decoded using a linear probe. This structure isn't incidental: research in mechanistic interpretability has shown that language models exploit it to do task-relevant computations. But where does this structure come from?
+
+We show that representational manifolds originate in _symmetry_ in the statistics of language (e.g., the frequency with which any two months co-occur in text depends only on the time interval between them). We prove this in word embedding models, _analytically_ deriving parametric equations for the representation manifolds. These predictions empirically match large text embedding models and large language models. We prove that this geometry is robust to perturbation if the co-occurrence statistics are controlled by an underlying latent variable.
+
+![](../_images/research/symmetry-repgeom.png)
+
+Ultimately, these results directly connect representational geometry to measurable statistics of the training data.
+
+## Kernels see data in terms of Hermite polynomials
+
+[Paper link.](https://arxiv.org/abs/2510.14878)
+
+How do the learning preferences of a machine learning algorithm depend on the training data distribution? It is well known that the model's inductive bias depends on the data distribution, but we lacked a concrete and quantitative connection between the raw statistics of the training data and the trained model's ability to generalize. In this paper, we make this connection in kernel ridge regression, yielding predictions that are accurate _up to constant prefactors_. This amounts to (the first?) end-to-end theory of learning that explicitly accounts for the structure in the data in a nonlinear supervised learning problem.
+
 ## Training dynamics of word2vec
 
 [Paper link.](https://arxiv.org/abs/2502.09863)
+
+[Blog post.](/posts/qwem/)
 
 What do contrastive word embedding models (e.g., word2vec) learn, and how? Specifically, what is learned by a model of size $$d$$ after training time $$t$$? By analytically solving for its learning dynamics, we find that
 * it learns one topic-level concept at a time until its capacity (latent dimension $$d$$) is saturated
@@ -47,7 +67,7 @@ So that takes care of the overparameterization question. What about regularizati
 
 [Paper link.](https://arxiv.org/abs/2404.19719)
 
-[Link to longer blog post.](/posts/ntk-mup-tutorial/)
+[Blog post.](/posts/ntk-mup-tutorial/)
 
 Theoretical analyses of overparameterized models have recently focused on studying very wide neural networks. I wrote this tutorial to try to present a clean and conceptually illustrative derivation of the following fact: in order to train wide networks effectively, there is only one degree of freedom in choosing hyperparameters such as the learning rate and the size of the initial weights. This degree of freedom controls the *activity* or *richness* of training behavior: at minimum, the wide network trains lazily like a kernel machine, and at maximum, it exhibits feature learning in the $$\mu$$P regime.
 
@@ -57,7 +77,7 @@ The main argument goes like this. If we want training to go smoothly, the loss h
 
 [Paper link.](https://arxiv.org/abs/2110.03922)
 
-[External link to longer blog post.](https://bair.berkeley.edu/blog/2021/10/25/eigenlearning/)
+[Blog post.](https://bair.berkeley.edu/blog/2021/10/25/eigenlearning/)
 
 What is the generalization error of linear least-squares ridge regression? A shocking (to me) fact is that the answer to this question was not well-known until recently (2020 ish).
 

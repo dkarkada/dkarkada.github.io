@@ -1,6 +1,4 @@
 import { moreLocales } from '@/config'
-// import { getLangFromPath } from '@/i18n/lang'
-// import { getLocalizedPath } from '@/i18n/path'
 
 // Checks if cleaned path matches a specific page type
 function isPageType(path: string, prefix: string = '') {

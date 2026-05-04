@@ -6,124 +6,163 @@
 
 /* Global Styles */
 .heti {
-  --at-apply: 'break-words leading-normal';
+  overflow-wrap: break-word;
+  line-height: 1.5;
 }
 
 /* Customized Post Title */
 .heti .post-title {
-  --at-apply: 'mb-2 mt-0 text-8.6 font-bold lg:text-9';
-  --at-apply: 'font-sans'
+  margin-bottom: 0.5rem;
+  margin-top: 0;
+  font-size: 2.15rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+}
+@media (min-width: 1024px) {
+  .heti .post-title { font-size: 2.25rem; }
 }
 
 /* Headings */
 .heti :where(h1, h2, h3, h4, h5, h6) {
-  --at-apply: 'mb-4 mt-1.5em font-semibold';
-  --at-apply: 'font-sans'
+  margin-bottom: 1rem;
+  margin-top: 1.5em;
+  font-weight: 600;
+  font-family: var(--font-sans);
 }
-.heti :where(h1) {
-  --at-apply: 'text-7 c-primary';
-}
-.heti :where(h2) {
-  --at-apply: 'text-6 c-primary';
-}
-.heti :where(h3) {
-  --at-apply: 'text-5';
-}
-.heti :where(h4) {
-  --at-apply: 'text-4.5';
-}
-.heti :where(h5) {
-  --at-apply: 'text-4';
-}
-.heti :where(h6) {
-  --at-apply: 'font-normal';
-}
+.heti :where(h1) { font-size: 1.75rem; color: var(--color-primary); }
+.heti :where(h2) { font-size: 1.5rem; color: var(--color-primary); }
+.heti :where(h3) { font-size: 1.25rem; }
+.heti :where(h4) { font-size: 1.125rem; }
+.heti :where(h5) { font-size: 1rem; }
+.heti :where(h6) { font-weight: 400; }
 .heti :where(h1, h2, h3) {
-  --at-apply: 'text-balance leading-1.33em';
+  text-wrap: balance;
+  line-height: 1.33em;
 }
 .heti :where(h1 + h2, h2 + h3, h3 + h4, h4 + h5, h5 + h6) {
-  --at-apply: 'mt-4';
+  margin-top: 1rem;
 }
 
 /* Paragraphs */
 .heti :where(p) {
-  --at-apply: 'mb-4 text-pretty';
-  --at-apply: 'text-serif text-lg leading-6';
+  margin-bottom: 1rem;
+  text-wrap: pretty;
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.5rem;
 }
 
 /* Links */
 .heti :where(a:not(.gc-container)) {
-  --at-apply: 'font-semibold tracking-0 underline underline-0.075em decoration-secondary/80 underline-offset-0.1em';
-  --at-apply: 'transition-colors ease-out hover:(c-primary decoration-primary/80) lg:underline-0.1em';
+  font-weight: 600;
+  letter-spacing: 0;
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.075em;
+  text-decoration-color: oklch(var(--color-secondary-params) / 0.8);
+  text-underline-offset: 0.1em;
+  transition-property: color, text-decoration-color;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.heti :where(a:not(.gc-container)):hover {
+  color: var(--color-primary);
+  text-decoration-color: oklch(var(--color-primary-params) / 0.8);
+}
+@media (min-width: 1024px) {
+  .heti :where(a:not(.gc-container)) {
+    text-decoration-thickness: 0.1em;
+  }
 }
 
 /* Images */
 .heti :where(img) {
-  --at-apply: 'mx-auto cursor-zoom-in';
+  margin-left: auto;
+  margin-right: auto;
+  cursor: zoom-in;
 }
 .heti :where(img:not(figure img)) {
-  --at-apply: 'my-6';
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 .heti :where(figure) {
-  --at-apply: 'mx-auto my-6';
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 .heti :where(figcaption) {
-  --at-apply: 'mt-2.5 text-center text-sm c-secondary/80';
+  margin-top: 0.625rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: oklch(var(--color-secondary-params) / 0.8);
 }
-.heti :is(h1, h2, h3, h4, h5, h6, img, figure) + :is(img, figure) {
-  --at-apply: 'mt-4';
-}
-.heti :is(img, figure):has(+ :is(img, figure)) {
-  --at-apply: 'mb-4';
-}
+.heti :is(h1, h2, h3, h4, h5, h6, img, figure) + :is(img, figure) { margin-top: 1rem; }
+.heti :is(img, figure):has(+ :is(img, figure)) { margin-bottom: 1rem; }
 
 /* Video */
 .heti iframe {
-  --at-apply: 'my-6 aspect-video w-full';
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  aspect-ratio: 16 / 9;
+  width: 100%;
 }
-.heti :is(h1, h2, h3, h4, h5, h6, iframe) + iframe {
-  --at-apply: 'mt-4';
-}
-.heti iframe:has(+ iframe) {
-  --at-apply: 'mb-4';
-}
+.heti :is(h1, h2, h3, h4, h5, h6, iframe) + iframe { margin-top: 1rem; }
+.heti iframe:has(+ iframe) { margin-bottom: 1rem; }
 
 /* Code Blocks */
 .heti :where(pre) {
-  --at-apply: 'overflow-auto uno-round-border px-4 py-3 bg-secondary/5!';
+  overflow: auto;
+  border-width: 1px;
+  border-style: solid;
+  border-color: oklch(var(--color-secondary-params) / 0.05);
+  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+  background-color: oklch(var(--color-secondary-params) / 0.05) !important;
   scrollbar-width: thin;
-  scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0) transparent;
+  scrollbar-color: oklch(var(--color-secondary-params) / 0) transparent;
   transition: scrollbar-color 0.3s ease-out;
 }
 .heti :where(pre):hover {
-  scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
+  scrollbar-color: oklch(var(--color-secondary-params) / 0.15) transparent;
 }
 .heti pre code {
-  --at-apply: 'border-none bg-transparent p-0';
+  border-width: 0;
+  background-color: transparent;
+  padding: 0;
 }
 html.dark .heti pre span {
-  --at-apply: 'text-[var(--shiki-dark)]!';
+  color: var(--shiki-dark) !important;
 }
 .heti .code-block-wrapper {
-  --at-apply: 'my-6 relative';
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
 }
-.heti :is(h1, h2, h3, h4, h5, h6, .code-block-wrapper) + .code-block-wrapper {
-  --at-apply: 'mt-4';
-}
-.heti .code-block-wrapper:has(+ .code-block-wrapper) {
-  --at-apply: 'mb-4';
-}
+.heti :is(h1, h2, h3, h4, h5, h6, .code-block-wrapper) + .code-block-wrapper { margin-top: 1rem; }
+.heti .code-block-wrapper:has(+ .code-block-wrapper) { margin-bottom: 1rem; }
 
 /* Inline Code */
 .heti :where(code) {
-  --at-apply: 'uno-round-border bg-secondary/5 px-0.4em py-0.2em text-0.85em tracking-0';
+  border-width: 1px;
+  border-style: solid;
+  border-color: oklch(var(--color-secondary-params) / 0.05);
+  border-radius: 0.25rem;
+  background-color: oklch(var(--color-secondary-params) / 0.05);
+  padding: 0.2em 0.4em;
+  font-size: 0.85em;
+  letter-spacing: 0;
   counter-reset: line;
 }
 .heti code span.line {
-  --at-apply: 'relative pl-8';
+  position: relative;
+  padding-left: 2rem;
 }
 .heti code span.line::before {
-  --at-apply: 'absolute left-0 w-4 c-secondary/40 leading-1.9em';
+  position: absolute;
+  left: 0;
+  width: 1rem;
+  color: oklch(var(--color-secondary-params) / 0.4);
+  line-height: 1.9em;
   content: counter(line);
   counter-increment: line;
   direction: rtl;
@@ -131,153 +170,164 @@ html.dark .heti pre span {
 
 /* Blockquotes */
 .heti :where(blockquote) {
-  --at-apply: 'my-6 border-l-4 border-secondary/25 border-solid px-4 py-0.5 c-secondary/80';
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left-width: 4px;
+  border-left-color: oklch(var(--color-secondary-params) / 0.25);
+  border-style: solid;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+  color: oklch(var(--color-secondary-params) / 0.8);
 }
 .heti blockquote[class*="admonition-"] {
-  --at-apply: 'py-1.5 c-secondary';
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+  color: var(--color-secondary);
 }
-.heti blockquote blockquote {
-  --at-apply: 'py-0';
-}
-.heti blockquote > :first-child {
-  --at-apply: 'mt-0';
-}
-.heti blockquote > :last-child {
-  --at-apply: 'mb-0';
-}
-.heti :is(h1, h2, h3, h4, h5, h6, blockquote) + blockquote {
-  --at-apply: 'mt-4';
-}
-.heti blockquote:has(+ blockquote) {
-  --at-apply: 'mb-4';
-}
+.heti blockquote blockquote { padding-top: 0; padding-bottom: 0; }
+.heti blockquote > :first-child { margin-top: 0; }
+.heti blockquote > :last-child { margin-bottom: 0; }
+.heti :is(h1, h2, h3, h4, h5, h6, blockquote) + blockquote { margin-top: 1rem; }
+.heti blockquote:has(+ blockquote) { margin-bottom: 1rem; }
 
 /* Tables */
 .heti :where(table) {
-  --at-apply: 'my-6 box-border block max-w-full table-fixed overflow-x-auto';
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  table-layout: fixed;
+  overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0) transparent;
+  scrollbar-color: oklch(var(--color-secondary-params) / 0) transparent;
   transition: scrollbar-color 0.3s ease-out;
 }
 .heti :where(table):hover {
-  scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
+  scrollbar-color: oklch(var(--color-secondary-params) / 0.15) transparent;
 }
 .heti :where(th, td) {
-  --at-apply: 'border-b border-b-secondary/25 px-3 pb-1.5';
+  border-bottom-width: 1px;
+  border-bottom-color: oklch(var(--color-secondary-params) / 0.25);
+  border-bottom-style: solid;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-bottom: 0.375rem;
 }
-.heti tr :where(td:first-child, th:first-child) {
-  --at-apply: 'pl-0';
-}
-.heti tr :where(td:last-child, th:last-child) {
-  --at-apply: 'pr-0';
-}
-.heti :where(td) {
-  --at-apply: 'pt-1.5';
-}
-.heti tr:last-child :where(td) {
-  --at-apply: 'border-b-0';
-}
-.heti :is(h1, h2, h3, h4, h5, h6, table) + table {
-  --at-apply: 'mt-4';
-}
-.heti table:has(+ table) {
-  --at-apply: 'mb-4';
-}
+.heti tr :where(td:first-child, th:first-child) { padding-left: 0; }
+.heti tr :where(td:last-child, th:last-child) { padding-right: 0; }
+.heti :where(td) { padding-top: 0.375rem; }
+.heti tr:last-child :where(td) { border-bottom-width: 0; }
+.heti :is(h1, h2, h3, h4, h5, h6, table) + table { margin-top: 1rem; }
+.heti table:has(+ table) { margin-bottom: 1rem; }
 
 /* Lists */
 .heti :where(ul, ol) {
-  --at-apply: 'my-6 pl-2em';
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 2em;
 }
 .heti :where(ul, ol) :where(ul, ol) {
-  --at-apply: 'mb-0.25em mt-0';
+  margin-bottom: 0.0625rem;
+  margin-top: 0;
 }
-.heti :where(ul) {
-  --at-apply: 'list-disc';
-}
-.heti :where(ol) {
-  --at-apply: 'list-decimal';
-}
-.heti :where(ul, ol) :where(ul) {
-  --at-apply: 'list-circle';
-}
-.heti :where(ul, ol) :where(ul, ol) :where(ul) {
-  --at-apply: 'list-square';
-}
-.heti :where(li) {
-  --at-apply: 'mt-0.25em list-unset';
-}
-.heti :is(h1, h2, h3, h4, h5, h6, ul, ol) + :is(ul, ol) {
-  --at-apply: 'mt-4';
-}
-.heti :is(ul, ol):has(+ :is(ul, ol)) {
-  --at-apply: 'mb-4';
-}
+.heti :where(ul) { list-style-type: disc; }
+.heti :where(ol) { list-style-type: decimal; }
+.heti :where(ul, ol) :where(ul) { list-style-type: circle; }
+.heti :where(ul, ol) :where(ul, ol) :where(ul) { list-style-type: square; }
+.heti :where(li) { margin-top: 0.5rem; list-style: unset; font-size: 1.125rem; font-family: var(--font-serif); }
+.heti :is(h1, h2, h3, h4, h5, h6, ul, ol) + :is(ul, ol) { margin-top: 1rem; }
+.heti :is(ul, ol):has(+ :is(ul, ol)) { margin-bottom: 1rem; }
 
-/* Superscript and Subscript >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
+/* Superscript and Subscript */
 .heti :where(sub, sup) {
-  --at-apply: 'relative mx-0.1em align-baseline text-0.75em';
+  position: relative;
+  margin-left: 0.1em;
+  margin-right: 0.1em;
+  vertical-align: baseline;
+  font-size: 0.75em;
 }
-.heti :where(sub) {
-  --at-apply: 'bottom--0.25em';
-}
-.heti :where(sup) {
-  --at-apply: 'top--0.5em';
-}
+.heti :where(sub) { bottom: -0.25em; }
+.heti :where(sup) { top: -0.5em; }
 
 /* Abbreviations */
 .heti :where(abbr[title]) {
-  --at-apply: 'cursor-help border-b-1 border-secondary border-dotted pb-0.25 no-underline';
+  cursor: help;
+  border-bottom-width: 1px;
+  border-bottom-style: dotted;
+  border-bottom-color: var(--color-secondary);
+  padding-bottom: 0.0625rem;
+  text-decoration: none;
 }
 
 /* Wavy Underline */
 .heti :where(u) {
-  --at-apply: 'underline decoration-red-400 underline-offset-0.25em decoration-wavy';
+  text-decoration-line: underline;
+  text-decoration-color: #f87171;
+  text-underline-offset: 0.25em;
+  text-decoration-style: wavy;
 }
 html.dark .heti :where(u) {
-  --at-apply: 'decoration-red-400/60';
+  text-decoration-color: rgba(248, 113, 113, 0.6);
 }
 
 /* Keyboard Input */
 .heti :where(kbd) {
-  --at-apply: 'inline-block px-0.4em py-0.3em text-0.85em font-bold leading-none tracking-0';
-  --at-apply: 'uno-round-border border-secondary/40 c-secondary';
+  display: inline-block;
+  padding: 0.3em 0.4em;
+  font-size: 0.85em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  border-width: 1px;
+  border-style: solid;
+  border-color: oklch(var(--color-secondary-params) / 0.4);
+  border-radius: 0.25rem;
+  color: var(--color-secondary);
 }
 
 /* Highlighted Text */
 .heti :where(mark) {
-  --at-apply: 'bg-highlight py-0.65 text-inherit';
+  background-color: var(--color-highlight);
+  padding-top: 0.1625rem;
+  padding-bottom: 0.1625rem;
+  color: inherit;
 }
 
 /* Footnotes */
-.heti :where(sub, sup) :where(a) {
-  --at-apply: 'no-underline';
-}
+.heti :where(sub, sup) :where(a) { text-decoration-line: none; }
 .heti :where(sup):target,
 .heti :where(sup) a:target {
-  --at-apply: 'bg-highlight';
+  background-color: var(--color-highlight);
 }
 .heti .data-footnote-backref {
-  --at-apply: 'font-serif no-underline';
+  font-family: var(--font-serif);
+  text-decoration-line: none;
 }
 
 /* Horizontal Rules */
 .heti :where(hr) {
-  --at-apply: 'mb-10.5 mt-14.5 h-auto border-none text-center';
+  margin-bottom: 2.625rem;
+  margin-top: 3.625rem;
+  height: auto;
+  border: none;
+  text-align: center;
 }
 .heti :where(hr)::before {
   content: "*   *   *";
-  --at-apply: 'whitespace-pre text-6 c-secondary/25 font-serif';
+  white-space: pre;
+  font-size: 1.5rem;
+  color: oklch(var(--color-secondary-params) / 0.25);
+  font-family: var(--font-serif);
 }
 
 /* Bold */
-.heti :where(b, strong) {
-  --at-apply: 'font-semibold';
-}
+.heti :where(b, strong) { font-weight: 600; }
 
 /* Italic */
-.heti :where(em) {
-  --at-apply: 'italic';
-}
+.heti :where(em) { font-style: italic; }
 
 /* Quotes */
 .heti :where(q:is(:lang(zh), :lang(ja), :lang(ko))) {
