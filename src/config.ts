@@ -23,7 +23,7 @@ export const themeConfig: ThemeConfig = {
     dark: {
       primary: 'oklch(0.86 0.03 64)',
       secondary: 'oklch(0.74 0.04 64)',
-      background: 'oklch(0.20 0.036 280)',
+      background: 'oklch(0.172 0.024 280)',
       highlight: 'oklch(0.28 0.05 275 / 1.0)',
     },
   },

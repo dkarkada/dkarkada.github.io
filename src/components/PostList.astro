@@ -118,6 +118,8 @@ function getPostPath(post: Post) {
   font-size: 1.375rem;
   font-family: var(--font-serif);
 }
+/* mobile home listing runs smaller than the tag listings */
+.post-link.home-link { font-size: 1.1rem; }
 @media (min-width: 1024px) {
   .post-link.home-link { font-weight: 500; font-size: 1.125rem; }
 }
@@ -128,6 +130,7 @@ function getPostPath(post: Post) {
   font-size: 0.875rem;
   font-family: var(--font-time);
 }
+.home-item .post-time-mobile { font-size: 0.8rem; }
 @media (min-width: 1024px) {
   .post-time-mobile { display: none; }
 }

@@ -19,6 +19,7 @@ import { rehypeUnwrapImg } from './src/plugins/rehype-unwrap-img.mjs'
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.mjs'
 import { remarkGithubCard } from './src/plugins/remark-github-card.mjs'
 import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
+import { remarkSmartypantsNoQuotes } from './src/plugins/remark-smartypants-no-quotes.mjs'
 import react from '@astrojs/react';
 
 const url = themeConfig.site.url
@@ -57,12 +58,16 @@ export default defineConfig({
     react()
   ],
   markdown: {
+    // Replace Astro's built-in SmartyPants with our quote-disabled variant
+    // (see remarkSmartypantsNoQuotes above).
+    smartypants: false,
     remarkPlugins: [
       remarkDirective,
       remarkMath,
       remarkAdmonitions,
       remarkGithubCard,
       remarkReadingTime,
+      remarkSmartypantsNoQuotes,
     ],
     rehypePlugins: [
       rehypeKatex,

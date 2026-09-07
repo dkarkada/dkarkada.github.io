@@ -10,11 +10,27 @@ import GoBackIcon from '@/assets/icons/go-back.svg';
   <GoBackIcon aria-hidden="true" fill="currentColor" />
 </a>
 
+<a id="back-home-mobile" href="/">&larr; back to home</a>
+
 <style>
 #back-button {
   display: none;
 }
+
+/* mobile-only text equivalent, sits above the post title */
+#back-home-mobile {
+  display: block;
+  width: fit-content;
+  margin-bottom: 0.75rem;
+  font-weight: 400;
+  text-decoration-line: none;
+  font-size: 0.8rem;
+  font-family: var(--font-navbar);
+  font-style: italic;
+  color: oklch(var(--color-secondary-params) / 0.5);
+}
 @media (min-width: 1024px) {
+  #back-home-mobile { display: none; }
   #back-button {
     display: block;
     position: absolute;

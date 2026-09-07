@@ -46,8 +46,9 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
   ]}
 >
   <Head {postTitle} {postDescription} {postSlug} />
-  <div id="noise-overlay"></div>
   <body>
+    <div id="noise-overlay" transition:persist></div>
+    <canvas id="twinkle-overlay" transition:persist></canvas>
     <div class="page-wrapper">
       {showTOCSidebar
         ? <div class="toc-sidebar-wrapper"><TOC headings={headings ?? []} sidebar={true} /></div>
@@ -66,6 +67,81 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
     <GithubCard />
   </body>
 </html>
+
+<script>
+  // Twinkling dot lattice over the dark background. One fixed full-viewport canvas
+  // (persisted across view transitions); each dot fades on its own slow sine at ~18fps.
+  // Skips entirely in light mode and paints a single static frame under reduced motion.
+  const cv = document.getElementById('twinkle-overlay') as HTMLCanvasElement | null
+  if (cv) {
+    const ctx = cv.getContext('2d')!
+    const PITCH = 30
+    const RH = PITCH * 0.8660254
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+    let dots: number[] = []
+    let cw = 0
+    let ch = 0
+    let last = -1e9
+    let painted = false
+
+    function lay(w: number, h: number) {
+      dots = []
+      for (let r = 0, y = -RH; y < h + RH; r++, y += RH) {
+        const ox = r & 1 ? PITCH / 2 : 0
+        for (let x = ox - PITCH; x < w + PITCH; x += PITCH)
+          dots.push(x, y, Math.random() * 6.2832, 0.45 + Math.random() * 1.05)
+      }
+    }
+
+    function draw(now: number, animate: boolean) {
+      const w = innerWidth
+      const h = innerHeight
+      const dpr = Math.min(devicePixelRatio || 1, 2)
+      if (cv!.width !== ((w * dpr) | 0) || cv!.height !== ((h * dpr) | 0)) {
+        cv!.width = w * dpr
+        cv!.height = h * dpr
+        cw = 0
+      }
+      if (w !== cw || h !== ch) {
+        lay(w, h)
+        cw = w
+        ch = h
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, w, h)
+      ctx.fillStyle = 'rgb(230,228,218)'
+      const t = now * 0.001
+      for (let i = 0; i < dots.length; i += 4) {
+        ctx.globalAlpha = animate
+          ? 0.075 * (0.5 + 0.5 * Math.sin(t * dots[i + 3] + dots[i + 2]))
+          : 0.045
+        ctx.fillRect(dots[i] - 1, dots[i + 1] - 1, 2, 2)
+      }
+      ctx.globalAlpha = 1
+    }
+
+    function frame(now: number) {
+      requestAnimationFrame(frame)
+      if (!document.documentElement.classList.contains('dark')) {
+        painted = false
+        return
+      }
+      if (reduce) {
+        if (!painted) {
+          draw(now, false)
+          painted = true
+        }
+        return
+      }
+      if (now - last < 55) return
+      last = now
+      draw(now, true)
+    }
+
+    addEventListener('resize', () => { painted = false }, { passive: true })
+    requestAnimationFrame(frame)
+  }
+</script>
 
 <style>
 .page-wrapper {

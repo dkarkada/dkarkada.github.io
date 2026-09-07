@@ -14,12 +14,12 @@
 .heti .post-title {
   margin-bottom: 0.5rem;
   margin-top: 0;
-  font-size: 2.15rem;
-  font-weight: 700;
-  font-family: var(--font-sans);
+  font-size: 1.9rem;
+  font-weight: 600;
+  font-family: var(--font-title);
 }
 @media (min-width: 1024px) {
-  .heti .post-title { font-size: 2.25rem; }
+  .heti .post-title { font-size: 2rem; }
 }
 
 /* Headings */
@@ -27,13 +27,13 @@
   margin-bottom: 1rem;
   margin-top: 1.5em;
   font-weight: 600;
-  font-family: var(--font-sans);
+  font-family: var(--font-title);
 }
-.heti :where(h1) { font-size: 1.75rem; color: var(--color-primary); }
-.heti :where(h2) { font-size: 1.5rem; color: var(--color-primary); }
-.heti :where(h3) { font-size: 1.25rem; }
-.heti :where(h4) { font-size: 1.125rem; }
-.heti :where(h5) { font-size: 1rem; }
+.heti :where(h1) { font-size: 1.55rem; color: var(--color-primary); }
+.heti :where(h2) { font-size: 1.35rem; color: var(--color-primary); }
+.heti :where(h3) { font-size: 1.15rem; }
+.heti :where(h4) { font-size: 1rem; }
+.heti :where(h5) { font-size: 0.9375rem; }
 .heti :where(h6) { font-weight: 400; }
 .heti :where(h1, h2, h3) {
   text-wrap: balance;
@@ -48,8 +48,8 @@
   margin-bottom: 1rem;
   text-wrap: pretty;
   font-family: var(--font-serif);
-  font-size: 1.125rem;
-  line-height: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.4rem;
 }
 
 /* Links */
@@ -237,7 +237,7 @@ html.dark .heti pre span {
 .heti :where(ol) { list-style-type: decimal; }
 .heti :where(ul, ol) :where(ul) { list-style-type: circle; }
 .heti :where(ul, ol) :where(ul, ol) :where(ul) { list-style-type: square; }
-.heti :where(li) { margin-top: 0.5rem; list-style: unset; font-size: 1.125rem; font-family: var(--font-serif); }
+.heti :where(li) { margin-top: 0.5rem; list-style: unset; font-size: 1rem; line-height: 1.4rem; font-family: var(--font-serif); }
 .heti :is(h1, h2, h3, h4, h5, h6, ul, ol) + :is(ul, ol) { margin-top: 1rem; }
 .heti :is(ul, ol):has(+ :is(ul, ol)) { margin-bottom: 1rem; }
 

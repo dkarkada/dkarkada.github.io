@@ -17,19 +17,51 @@ body::selection {
   background-color: var(--color-highlight);
 }
 
-#noise-overlay {
+/* Fixed full-viewport texture layers, behind all content. */
+#noise-overlay,
+#twinkle-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  inset: 0;
   z-index: -1;
+  pointer-events: none;
+}
+
+/* Grain. Light mode keeps the original tiled PNG; dark mode gets a soft
+   feTurbulence noise blended `overlay` so it doesn't shift mean lightness. */
+#noise-overlay {
   background-image: url('../assets/img/noiseTextureBlue.png');
   background-repeat: repeat;
-  pointer-events: none;
+}
+html.dark #noise-overlay {
+  background-image: var(--grain);
+  background-size: 170px 170px;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+@media (max-width: 1023px) {
+  html.dark #noise-overlay {
+    background-image: var(--grain-small);
+  }
+}
+
+/* Twinkling dot lattice (dark only) — drawn by the script in Layout.astro. */
+#twinkle-overlay {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+html.dark #twinkle-overlay {
+  display: block;
+  mix-blend-mode: screen;
 }
 
 /* PhotoSwipe Background Color */
 .pswp .pswp__bg {
   background-color: var(--color-background) !important;
 }
+
+.katex { font-size: 1.04em; }
+.katex-display .katex { font-size: 1.15em; }
 
 /* Fix KaTeX Overflow with Hidden Scrollbar */
 .katex-display {

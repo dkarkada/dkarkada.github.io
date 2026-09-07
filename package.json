@@ -42,6 +42,7 @@
     "rehype-slug": "^6.0.0",
     "remark-directive": "^4.0.0",
     "remark-math": "^6.0.0",
+    "remark-smartypants": "^3.0.2",
     "sanitize-html": "^2.17.0",
     "sharp": "^0.34.2",
     "unist-util-visit": "^5.0.0"

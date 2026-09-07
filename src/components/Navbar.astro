@@ -3,18 +3,15 @@ import { getPageInfo, getCleanPath} from '@/utils/page'
 
 const { isHome, isPost, isTag} = getPageInfo(Astro.url.pathname)
 
-const isPostActive = isHome || isPost
-const isTagActive = isTag
-
 const navItems = [
-  { href: '/', label: 'Posts', active: isPostActive },
-  { href: '/tags/', label: 'Tags', active: isTagActive },
+  { href: '/', label: 'Home', active: isHome },
+  { href: '/tags/', label: 'Tags', active: isTag },
 ]
 ---
 
 <nav
   aria-label="Site Navigation"
-  class:list={[{ 'post-page': isPost }]}
+  class:list={[{ 'post-page': isPost, 'home-page': isHome }]}
 >
   <ul>
     {navItems.map(item => (
@@ -39,7 +36,7 @@ nav {
   font-family: var(--font-navbar);
   font-style: italic;
 }
-nav.post-page { display: none; }
+nav.post-page, nav.home-page { display: none; }
 @media (min-width: 1024px) {
   nav {
     position: fixed;
@@ -48,7 +45,7 @@ nav.post-page { display: none; }
     font-size: 1.25rem;
     bottom: min(9.04rem + 3.85vw, 10.5rem);
   }
-  nav.post-page { display: block; }
+  nav.post-page, nav.home-page { display: block; }
 }
 
 /* Nav links */

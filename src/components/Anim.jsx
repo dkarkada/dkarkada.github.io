@@ -218,7 +218,7 @@ export default function Anim({isAbout = false}) {
 		<div className="animContainer">
 			<img
 			src="/assets/images/headshot.jpg"
-			className="animCanvas"
+			className="animCanvas animPhoto"
 			alt="Decorative graphic"
 			/>
 		</div>
@@ -323,7 +323,9 @@ export default function Anim({isAbout = false}) {
 
 	return (
 		<div className="animContainer">
-		<canvas ref={canvasRef} width={W} height={H} className="animCanvas" />
+		<a href="/posts/anim/" className="animLink" aria-label="What's that animation?">
+			<canvas ref={canvasRef} width={W} height={H} className="animCanvas" />
+		</a>
 		</div>
 	)
 }

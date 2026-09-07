@@ -5,9 +5,9 @@
 
 @media (max-width: 1023px) {
   .animContainer {
-    height: 140px;
+    height: auto;
     width: auto;
-    margin: auto;
+    margin: 0 auto 1.75rem;
   }
 }
 
@@ -19,11 +19,16 @@
   }
 }
 
+.animLink {
+  display: block;
+  cursor: pointer;
+}
+
 .animCanvas {
   display: block;
   height: 224px;
   width: 100%;
-  border-radius: 10%;
+  border-radius: 22px;
   border-color: rgb(7, 4, 39);
   border-width: 3px;
   background: #4e4c42;
@@ -31,11 +36,15 @@
 }
 
 @media (max-width: 1023px) {
+  /* square aspect ratio, centered, uniform px corner rounding */
   .animCanvas {
-    height: 128px;
-    border-radius: 50%;
-    margin: auto;
+    height: 140px;
+    width: 140px;
+    border-radius: 16px;
+    margin: 0 auto;
   }
+  /* the about-page headshot stays a circle on mobile */
+  .animPhoto { border-radius: 50%; }
 }
 
 .toc-sidebar-wrapper {

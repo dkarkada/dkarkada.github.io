@@ -86,9 +86,9 @@ Do NNs far from the mean-field limit behave qualitatively differently? Can the f
 
 ## References
 
-1. [Bahri, Yasaman et al. (2020). “Statistical mechanics of deep learning”. In: *Annual Review of Condensed Matter Physics* 11.1.](https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745)
-2. [He, Kaiming et al. (2015). “Delving deep into rectifiers: Surpassing human-level performance on imagenet classification”. In: *Proceedings of the IEEE international conference on computer vision*, pp. 1026–1034.](https://arxiv.org/abs/1502.01852)
+1. [Bahri, Yasaman et al. (2020). "Statistical mechanics of deep learning". In: *Annual Review of Condensed Matter Physics* 11.1.](https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-031119-050745)
+2. [He, Kaiming et al. (2015). "Delving deep into rectifiers: Surpassing human-level performance on imagenet classification". In: *Proceedings of the IEEE international conference on computer vision*, pp. 1026–1034.](https://arxiv.org/abs/1502.01852)
 3. [Kardar, Mehran (2007). *Statistical physics of fields*. Cambridge University Press.](https://doi.org/10.1017/CBO9780511815881)
-4. [Schoenholz, Samuel S et al. (2016). “Deep information propagation”. In: *arXiv preprint arXiv:1611.01232*.](https://arxiv.org/abs/1611.01232)
+4. [Schoenholz, Samuel S et al. (2016). "Deep information propagation". In: *arXiv preprint arXiv:1611.01232*.](https://arxiv.org/abs/1611.01232)
 5. [Roberts, Daniel A, Sho Yaida, and Boris Hanin (2022). *The Principles of Deep Learning Theory: An Effective Theory Approach to Understanding Neural Networks*. Cambridge University Press.](https://arxiv.org/abs/2106.10165)
-6. [Lee, Jaehoon et al. (2017). “Deep neural networks as gaussian processes”. In: *arXiv preprint arXiv:1711.00165*.](https://arxiv.org/abs/1711.00165)
+6. [Lee, Jaehoon et al. (2017). "Deep neural networks as gaussian processes". In: *arXiv preprint arXiv:1711.00165*.](https://arxiv.org/abs/1711.00165)
