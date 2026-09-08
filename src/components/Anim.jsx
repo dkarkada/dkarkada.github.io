@@ -204,15 +204,125 @@ export function loadAnimData() {
 
 const TARGET_FPS  = 20;
 const FRAME_TIME  = 1000 / TARGET_FPS; // 50 ms
-let   nextFrameDue = 0;                // in ms – first frame is immediate
 
-/* persisted across page navigations (module lives for the session) */
-let _savedFrame = 0;
-let _hasShown   = false;
+/* ---------------------------------------------------------------------------
+ * Module-scope render engine — a session singleton. The mousemove listener and
+ * the rAF loop are created at most once, no matter how many times <Anim>
+ * mounts (React StrictMode / dev double-invoke, hydration re-mounts,
+ * view-transition remounts). The loop draws to whichever canvas is currently
+ * mounted (`engineCanvas`) and parks itself when there is none.
+ *
+ * Fade progress (`_fade`) and playback position (`_savedFrame`) live here so a
+ * re-mount resumes rather than replaying the fade. The fade advances by the
+ * delta between *painted* frames (`prevTS`), which starts unset so the very
+ * first painted frame always uses dt = 0 and draws at the current `_fade`
+ * (0 on a cold load) — a clean start from the gray placeholder instead of the
+ * one-frame full-brightness flash the old promise-resolution clock produced.
+ * ------------------------------------------------------------------------- */
+let _savedFrame  = 0;
+let _fade        = 0;           // 0..1, monotonic
+let _speed       = 1;
+let _mouseX = null, _mouseY = null, _mouseTS = 0;
+let engineInit   = false;
+let engineCanvas = null;        // the <canvas> currently on screen, or null
+let resumeLoop   = () => {};    // replaced once anim data has loaded
 
-export default function Anim({isAbout = false}) {
+function onMouseMove(e) {
+	const now = performance.now();
+	if (_mouseX !== null) {
+		const vel = Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY) /
+			((now - _mouseTS) / 1000 || 1);
+		_speed = 1 + Math.min(vel / 100, 10);
+	}
+	_mouseX = e.clientX; _mouseY = e.clientY; _mouseTS = now;
+}
+
+function initEngine() {
+	if (engineInit) return;
+	engineInit = true;
+
+	document.addEventListener('mousemove', onMouseMove);
+
+	/* off-screen canvas for the interpolated frame */
+	const offCvs = document.createElement('canvas');
+	offCvs.width = W; offCvs.height = H;
+	const offCtx = offCvs.getContext('2d');
+	const frameSize = W * H * C;
+	const rowStride = W * C;
+
+	loadAnimData().then(({ bytes, frameCount }) => {
+		const img = offCtx.createImageData(W, H);
+		let prevTS = 0;        // 0 => first painted frame; set from `ts` so dt = 0
+		let nextDue = 0;
+		let running = false;
+
+		function loop(ts) {
+			const cvs = engineCanvas;
+			if (!cvs) { running = false; return; }   // parked; resumeLoop() restarts it
+
+			if (ts >= nextDue) {
+				nextDue = ts + FRAME_TIME;
+
+				const dt = Math.min(ts - prevTS, FRAME_TIME * 2)
+				prevTS = ts;
+
+				if (_mouseTS && ts - _mouseTS > 100) _speed = 1;
+				_savedFrame = (_savedFrame + dt * 0.005 * _speed) % frameCount;
+
+				const i0 = _savedFrame | 0;
+				const i1 = (i0 + 1) % frameCount;
+				const a  = _savedFrame - i0;
+
+				for (let y = 0; y < H; ++y) {
+					for (let x = 0; x < W; ++x) {
+						const s0 = i0 * frameSize + y * rowStride + x * C;
+						const s1 = i1 * frameSize + y * rowStride + x * C;
+						const d  = (y * W + x) * 4;
+						for (let c = 0; c < 3; ++c)
+							img.data[d + c] = bytes[s0 + c] * (1 - a) + bytes[s1 + c] * a;
+						img.data[d + 3] = 255;
+					}
+				}
+				offCtx.putImageData(img, 0, 0);
+
+				if (_fade < 1) _fade = Math.min(1, _fade + 0.3 * dt * 0.005);
+
+				const ctx = cvs.getContext('2d');
+				ctx.clearRect(0, 0, W, H);
+				ctx.globalAlpha = _fade;
+				ctx.drawImage(offCvs, 0, 0);
+				ctx.globalAlpha = 1;
+			}
+
+			requestAnimationFrame(loop);
+		}
+
+		resumeLoop = () => {
+			if (running || !engineCanvas) return;
+			running = true;
+			prevTS = 0;          // re-sync the clock on every (re)start
+			requestAnimationFrame(loop);
+		};
+		resumeLoop();
+	}).catch(() => {});
+}
+
+export default function Anim({ isAbout = false }) {
 	const canvasRef = useRef(null);
-	const rafRef    = useRef(null);
+
+	useEffect(() => {
+		if (isAbout) return;
+		const cvs = canvasRef.current;
+		if (!cvs) return;
+		cvs.width = W; cvs.height = H;
+		engineCanvas = cvs;
+		initEngine();
+		resumeLoop();
+		return () => {
+			if (engineCanvas === cvs) engineCanvas = null;
+		};
+	}, [isAbout]);
+
 	if (isAbout) {
 		return (
 		<div className="animContainer">
@@ -224,102 +334,6 @@ export default function Anim({isAbout = false}) {
 		</div>
 		);
 	}
-
-	useEffect(() => {
-		/* visible canvas */
-		const cvs = canvasRef.current;
-		cvs.width = W; cvs.height = H;
-		const ctx = cvs.getContext('2d');
-
-		/* off-screen canvas for interpolated frame */
-		const offCvs = document.createElement('canvas');
-		offCvs.width = W; offCvs.height = H;
-		const offCtx = offCvs.getContext('2d');
-
-		/* working ImageData buffer */
-		const img = ctx.createImageData(W, H);
-		const frameSize = W * H * C;
-		const rowStride = W * C;
-
-		let cancelled = false;
-
-		/* mouse-driven speed — always document-level */
-		let lastMouseX = null, lastMouseY = null, lastMouseTS = 0;
-		let speed = 1;
-
-		function handleMove(e) {
-			const now = performance.now();
-			if (lastMouseX !== null) {
-				const vel = Math.hypot(e.clientX - lastMouseX,
-					e.clientY - lastMouseY) /
-					((now - lastMouseTS) / 1000 || 1);
-				speed = 1 + Math.min(vel / 100, 10);
-			}
-			lastMouseX = e.clientX; lastMouseY = e.clientY; lastMouseTS = now;
-		}
-		document.addEventListener('mousemove', handleMove);
-
-		/* resume from where we left off if the animation has already loaded */
-		loadAnimData().then(({ bytes, frameCount }) => {
-			if (cancelled) return;
-
-			let current = _savedFrame;
-			let totalfade = _hasShown ? 1 : 0;
-			let lastTS  = performance.now();
-
-			function tick(ts) {
-				if (ts >= nextFrameDue) {
-					nextFrameDue = ts + FRAME_TIME;
-
-					const dt = ts - lastTS;
-					lastTS = ts;
-
-					if (lastMouseTS && ts - lastMouseTS > 100) speed = 1;
-					current = (current + dt * 0.005 * speed) % frameCount;
-					_savedFrame = current;
-
-					const i0 = current | 0;
-					const i1 = (i0 + 1) % frameCount;
-					const a  = current - i0;
-
-					/* interpolate into img */
-					for (let y = 0; y < H; ++y) {
-						for (let x = 0; x < W; ++x) {
-							const s0 = i0 * frameSize + y * rowStride + x * C;
-							const s1 = i1 * frameSize + y * rowStride + x * C;
-							const d  = (y * W + x) * 4;
-							for (let c = 0; c < 3; ++c)
-								img.data[d + c] = bytes[s0 + c] * (1 - a) + bytes[s1 + c] * a;
-							img.data[d + 3] = 255;
-						}
-					}
-
-					offCtx.putImageData(img, 0, 0);
-
-					/* fade-in only on first ever load */
-					if (totalfade < 1) {
-						totalfade = Math.min(1, totalfade + 0.3 * dt * 0.005);
-						if (totalfade >= 1) _hasShown = true;
-					}
-
-					ctx.clearRect(0, 0, W, H);
-					ctx.globalAlpha = totalfade;
-					ctx.drawImage(offCvs, 0, 0);
-					ctx.globalAlpha = 1;
-				}
-
-				rafRef.current = requestAnimationFrame(tick);
-			}
-
-			rafRef.current = requestAnimationFrame(tick);
-		}).catch(() => {});
-
-		return () => {
-			cancelled = true
-			cancelAnimationFrame(rafRef.current)
-			document.removeEventListener('mousemove', handleMove)
-		}
-	}, [])
 
 	return (
 		<div className="animContainer">

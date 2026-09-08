@@ -19,40 +19,41 @@ body::selection {
 
 /* Fixed full-viewport texture layers, behind all content. */
 #noise-overlay,
-#twinkle-overlay {
+#grain-shimmer {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
 }
 
-/* Grain. Light mode keeps the original tiled PNG; dark mode gets a soft
-   feTurbulence noise blended `overlay` so it doesn't shift mean lightness. */
+/* Grain.
+   Light mode: the original tiled PNG on #noise-overlay.
+   Dark mode: #grain-shimmer — 12 layers sharing one greyscale fractalNoise
+   tile at different offsets, which the script in Layout.astro scans with a
+   moving window. The active layers are averaged into one mean-0.5 field and
+   blended `overlay` once, so the shimmer never shifts the ground's mean
+   lightness. */
 #noise-overlay {
   background-image: url('../assets/img/noiseTextureBlue.png');
   background-repeat: repeat;
 }
 html.dark #noise-overlay {
-  background-image: var(--grain);
-  background-size: 170px 170px;
-  mix-blend-mode: overlay;
-  opacity: 0.5;
-}
-@media (max-width: 1023px) {
-  html.dark #noise-overlay {
-    background-image: var(--grain-small);
-  }
+  display: none;
 }
 
-/* Twinkling dot lattice (dark only) — drawn by the script in Layout.astro. */
-#twinkle-overlay {
+#grain-shimmer {
   display: none;
-  width: 100%;
-  height: 100%;
+  isolation: isolate;
+  mix-blend-mode: overlay;
 }
-html.dark #twinkle-overlay {
+html.dark #grain-shimmer {
   display: block;
-  mix-blend-mode: screen;
+}
+#grain-shimmer .grain-layer {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  opacity: 0;
 }
 
 /* PhotoSwipe Background Color */

@@ -47,8 +47,8 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
 >
   <Head {postTitle} {postDescription} {postSlug} />
   <body>
-    <div id="noise-overlay" transition:persist></div>
-    <canvas id="twinkle-overlay" transition:persist></canvas>
+    <div id="noise-overlay" transition:persist="noise-overlay"></div>
+    <div id="grain-shimmer" transition:persist="grain-shimmer" aria-hidden="true"></div>
     <div class="page-wrapper">
       {showTOCSidebar
         ? <div class="toc-sidebar-wrapper"><TOC headings={headings ?? []} sidebar={true} /></div>
@@ -69,78 +69,156 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
 </html>
 
 <script>
-  // Twinkling dot lattice over the dark background. One fixed full-viewport canvas
-  // (persisted across view transitions); each dot fades on its own slow sine at ~18fps.
-  // Skips entirely in light mode and paints a single static frame under reduced motion.
-  const cv = document.getElementById('twinkle-overlay') as HTMLCanvasElement | null
-  if (cv) {
-    const ctx = cv.getContext('2d')!
-    const PITCH = 30
-    const RH = PITCH * 0.8660254
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
-    let dots: number[] = []
-    let cw = 0
-    let ch = 0
-    let last = -1e9
-    let painted = false
+  // Dark-mode background grain. Twelve greyscale noise layers around a ring,
+  // scanned by a moving raised-cosine window: the layers within the window
+  // composite as a running-normalised `over` stack, so the group is a convex
+  // combination of mean-0.5 fields. Blended `overlay` once (see #grain-shimmer
+  // in global.css), that leaves the ground's mean lightness untouched at every
+  // phase — only the fine grain morphs. Skips work in light mode; paints a
+  // single static frame under reduced motion.
+  //
+  // `color-interpolation-filters='sRGB'` below is load-bearing, not decoration.
+  // The SVG default is linearRGB, so feTurbulence's mean-0.5 field would be
+  // generated and processed in linear space and then converted to sRGB for
+  // display, landing at mean 0.73 rather than 0.5. On a dark ground `overlay`
+  // reduces to 2·base·blend — linear in the blend value — so that turned the
+  // whole page ~1.46× lighter the moment the layers mounted, which read as a
+  // flash. With sRGB interpolation the tile is genuinely mean-0.5 and the
+  // blend is an exact no-op on the ground, so there is nothing to flash.
+  //
+  // Cost notes: the fractalNoise filter is rasterised ONCE — all 12 layers
+  // share the same data-URI (the browser decodes it a single time) and merely
+  // sample it at 12 well-separated `background-position` offsets, which read as
+  // 12 decorrelated fields. `#grain-shimmer` is transition:persist'd; the
+  // script is deduped across client-side navigations, so the build + rAF loop
+  // are re-attached on every `astro:page-load` — keeping the persisted layers
+  // if they survived, rebuilding them if not.
+  const N = 12           // layers around the ring
+  const PERIOD = 3       // seconds for one full trip round the ring
+  const HALF = 2.5       // window half-width, in layers (~5 layers overlap)
+  const TILE = 170
+  // Grain frequency is breakpoint-dependent: narrow viewports get a finer
+  // tile, at the same 1024px breakpoint the layout already uses. Evaluated
+  // when the tile is built rather than live — setup() rebuilds if the viewport
+  // has since crossed the breakpoint. Both frequencies are mean-0.5, so the
+  // no-flash property above holds either way (sd 16.5 vs 15.8 — no retune).
+  const WIDE = '(min-width: 1024px)'
+  const baseFreq = () => matchMedia(WIDE).matches ? 0.5 : 0.6
+  const OCTAVES = 3
+  // Contrast, scaled about a fixed 0.5 midpoint. Retuned from 2.5 alongside
+  // the sRGB fix: sRGB interpolation raises the tile's sd on its own, and the
+  // ground it multiplies is now ~1.46× lighter, so matching the old visible
+  // grain needs a *lower* slope. 1.2 puts the tile at sd ≈ 16.5, which after
+  // the brighter ground reproduces the previous sd ≈ 23.6 at the pixel.
+  const SLOPE = 1.2
+  const BLUR = 1.0       // feGaussianBlur stdDeviation, softens the hash
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    function lay(w: number, h: number) {
-      dots = []
-      for (let r = 0, y = -RH; y < h + RH; r++, y += RH) {
-        const ox = r & 1 ? PITCH / 2 : 0
-        for (let x = ox - PITCH; x < w + PITCH; x += PITCH)
-          dots.push(x, y, Math.random() * 6.2832, 0.45 + Math.random() * 1.05)
-      }
-    }
-
-    function draw(now: number, animate: boolean) {
-      const w = innerWidth
-      const h = innerHeight
-      const dpr = Math.min(devicePixelRatio || 1, 2)
-      if (cv!.width !== ((w * dpr) | 0) || cv!.height !== ((h * dpr) | 0)) {
-        cv!.width = w * dpr
-        cv!.height = h * dpr
-        cw = 0
-      }
-      if (w !== cw || h !== ch) {
-        lay(w, h)
-        cw = w
-        ch = h
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.clearRect(0, 0, w, h)
-      ctx.fillStyle = 'rgb(230,228,218)'
-      const t = now * 0.001
-      for (let i = 0; i < dots.length; i += 4) {
-        ctx.globalAlpha = animate
-          ? 0.075 * (0.5 + 0.5 * Math.sin(t * dots[i + 3] + dots[i + 2]))
-          : 0.045
-        ctx.fillRect(dots[i] - 1, dots[i + 1] - 1, 2, 2)
-      }
-      ctx.globalAlpha = 1
-    }
-
-    function frame(now: number) {
-      requestAnimationFrame(frame)
-      if (!document.documentElement.classList.contains('dark')) {
-        painted = false
-        return
-      }
-      if (reduce) {
-        if (!painted) {
-          draw(now, false)
-          painted = true
-        }
-        return
-      }
-      if (now - last < 55) return
-      last = now
-      draw(now, true)
-    }
-
-    addEventListener('resize', () => { painted = false }, { passive: true })
-    requestAnimationFrame(frame)
+  const noiseURI = () => {
+    const icpt = (0.5 - 0.5 * SLOPE).toFixed(4)
+    const svg
+      = "<svg xmlns='http://www.w3.org/2000/svg' width='" + TILE + "' height='" + TILE + "'>"
+      + "<filter id='n' color-interpolation-filters='sRGB'>"
+      + "<feTurbulence type='fractalNoise' baseFrequency='" + baseFreq()
+      + "' numOctaves='" + OCTAVES + "' seed='7' stitchTiles='stitch'/>"
+      + "<feColorMatrix type='saturate' values='0'/>"
+      + "<feComponentTransfer>"
+      + "<feFuncR type='linear' slope='" + SLOPE + "' intercept='" + icpt + "'/>"
+      + "<feFuncG type='linear' slope='" + SLOPE + "' intercept='" + icpt + "'/>"
+      + "<feFuncB type='linear' slope='" + SLOPE + "' intercept='" + icpt + "'/>"
+      + "<feFuncA type='linear' slope='0' intercept='1'/>"
+      + "</feComponentTransfer>"
+      + "<feGaussianBlur stdDeviation='" + BLUR + "' edgeMode='wrap'/>"
+      + "</filter>"
+      + "<rect width='100%' height='100%' filter='url(#n)'/></svg>"
+    return 'data:image/svg+xml,' + encodeURIComponent(svg)
   }
+
+  let layers: HTMLElement[] = []
+  let phase = 0
+  let last = -1
+  let painted = false
+  let looping = false
+
+  function apply(p: number) {
+    if (!layers.length) return
+    const w: number[] = []
+    for (let i = 0; i < N; i++) {
+      let d = Math.abs(i - p)
+      d = Math.min(d, N - d)
+      const c = d < HALF ? Math.cos((Math.PI / 2) * (d / HALF)) : 0
+      w.push(c * c)
+    }
+    // running-normalised `over` stack -> group = sum(w_i N_i) / sum(w_i)
+    let cum = 0
+    for (let i = 0; i < N; i++) {
+      cum += w[i]
+      layers[i].style.opacity = cum > 1e-6 ? String(w[i] / cum) : '0'
+    }
+  }
+
+  function frame(now: number) {
+    requestAnimationFrame(frame)
+    if (!document.documentElement.classList.contains('dark')) {
+      painted = false
+      return
+    }
+    if (reduce) {
+      if (!painted) {
+        apply(0)
+        painted = true
+      }
+      return
+    }
+    if (now - last < 33) return           // ~30fps is plenty for a slow morph
+    const dt = last < 0 ? 0 : (now - last) / 1000
+    last = now
+    phase = (phase + (dt / PERIOD) * N) % N
+    apply(phase)
+    painted = true
+  }
+
+  function setup() {
+    const root = document.getElementById('grain-shimmer')
+    if (!root) return
+    // The persisted layers record the breakpoint they were rasterised at. If
+    // the viewport has crossed it since (rotation, a resized window), drop
+    // them so the tile is rebuilt at the right frequency.
+    const bp = matchMedia(WIDE).matches ? 'wide' : 'narrow'
+    if (root.dataset.bp !== bp) {
+      root.replaceChildren()
+      root.dataset.bp = bp
+    }
+    if (!root.querySelector('.grain-layer')) {
+      const bg = 'url("' + noiseURI() + '")'   // one tile, decoded once, shared by all
+      const size = TILE + 'px ' + TILE + 'px'
+      const frag = document.createDocumentFragment()
+      for (let i = 0; i < N; i++) {
+        // golden-ratio low-discrepancy offsets: consecutive layers land far
+        // apart, so a window of neighbours reads as decorrelated fields
+        // crossfading (morphing), not one field sliding.
+        const ox = ((i * 0.6180339887) % 1) * TILE
+        const oy = ((i * 0.4142135624) % 1) * TILE
+        const d = document.createElement('div')
+        d.className = 'grain-layer'
+        d.style.backgroundImage = bg
+        d.style.backgroundSize = size
+        d.style.backgroundPosition = ox.toFixed(1) + 'px ' + oy.toFixed(1) + 'px'
+        frag.appendChild(d)
+      }
+      root.appendChild(frag)
+    }
+    layers = Array.from(root.querySelectorAll('.grain-layer')) as HTMLElement[]
+    last = -1
+    painted = false
+    if (!looping) {
+      looping = true
+      requestAnimationFrame(frame)
+    }
+  }
+
+  setup()
+  document.addEventListener('astro:page-load', setup)
 </script>
 
 <style>
