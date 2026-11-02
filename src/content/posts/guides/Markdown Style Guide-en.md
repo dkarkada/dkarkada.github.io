@@ -59,7 +59,7 @@ To add an image, add an exclamation mark `!`, followed by alt text in brackets `
 ### Syntax
 
 ```
-![Image Description](../_images/image-01.jpeg)
+![Image Description](../_media/image-01.jpeg)
 
 ![Image Description](https://image.example.com/image-01.webp)
 ```

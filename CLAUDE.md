@@ -24,7 +24,7 @@ This is an **Astro 5** static blog with plain CSS and React for interactive isla
 
 ### Content
 
-All posts live under `src/content/posts/` organized into subdirectories (`blog/`, `guides/`). Images shared across posts go in `src/content/posts/_images/`. Posts are Markdown or MDX with this frontmatter:
+All posts live under `src/content/posts/` organized into subdirectories (`blog/`, `guides/`). Images and other media (e.g. widget scripts and data) go in `src/content/posts/_media/`. Posts are Markdown or MDX with this frontmatter:
 
 ```yaml
 title: string          # required

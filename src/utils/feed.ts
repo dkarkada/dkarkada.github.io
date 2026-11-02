@@ -19,9 +19,9 @@ const markdownParser = new MarkdownIt()
 const { title, description, url, author: siteAuthor } = themeConfig.site
 const followConfig = themeConfig.seo?.follow
 
-// Dynamically import all images from /src/content/posts/_images
+// Dynamically import all images from /src/content/posts/_media
 const imagesGlob = import.meta.glob<{ default: ImageMetadata }>(
-  '/src/content/posts/_images/**/*.{jpeg,jpg,png,gif,webp}',
+  '/src/content/posts/_media/**/*.{jpeg,jpg,png,gif,webp}',
 )
 
 /**
@@ -75,7 +75,7 @@ async function fixRelativeImagePaths(htmlContent: string, baseUrl: string): Prom
           return
         }
 
-        // Process images from src/content/posts/_images directory
+        // Process images from src/content/posts/_media directory
         if (src.startsWith('./') || src.startsWith('../')) {
           const optimizedImageUrl = await getOptimizedImageUrl(src, baseUrl)
 

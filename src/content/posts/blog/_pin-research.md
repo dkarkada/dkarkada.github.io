@@ -19,7 +19,7 @@ The internal representations learned by language models consistently exhibit str
 
 We show that representational manifolds originate in _symmetry_ in the statistics of language (e.g., the frequency with which any two months co-occur in text depends only on the time interval between them). We prove this in word embedding models, _analytically_ deriving parametric equations for the representation manifolds. These predictions empirically match large text embedding models and large language models. We prove that this geometry is robust to perturbation if the co-occurrence statistics are controlled by an underlying latent variable.
 
-![](../_images/research/symmetry-repgeom.png)
+![](../_media/research/symmetry-repgeom.png)
 
 Ultimately, these results directly connect representational geometry to measurable statistics of the training data.
 
@@ -49,7 +49,7 @@ Btw, why care about word2vec? I'll give three reasons:
 2. It's a simple and relevant natural language task that requires feature learning! Understanding word2vec gives us a concrete new view into the general phenomenon.
 3. LLMs exhibit behaviors directly analogous to word2vec. Perhaps most strikingly, LLMs often represent abstract semantic concepts as *linear subspaces* of the ambient latent space; this was famously first observed in word2vec, enabling word2vec embeddings to complete analogies such as *man : woman :: king : queen* via vector addition.
 
-![We compare the time course of learning in our simplified model (top) and OG word2vec (bottom), finding striking similarities in their training dynamics and learned representations. Our analytical solution for the optimization dynamics reveals discrete learning steps corresponding to stepwise decreases in the loss (top left). In latent space (right side plots), embedding vectors expand into subspaces of increasing dimension at each learning step. These learned features can be extracted from our theory in closed form given only the corpus statistics and hyperparameters. We provide lots of evidence that our simplified model is a faithful proxy for word2vec.](../_images/research/qwem.png)
+![We compare the time course of learning in our simplified model (top) and OG word2vec (bottom), finding striking similarities in their training dynamics and learned representations. Our analytical solution for the optimization dynamics reveals discrete learning steps corresponding to stepwise decreases in the loss (top left). In latent space (right side plots), embedding vectors expand into subspaces of increasing dimension at each learning step. These learned features can be extracted from our theory in closed form given only the corpus statistics and hyperparameters. We provide lots of evidence that our simplified model is a faithful proxy for word2vec.](../_media/research/qwem.png)
 
 ## More is better in modern ML
 
@@ -61,7 +61,7 @@ To answer this, we provide a theory of generalization in random feature (RF) mod
 
 So that takes care of the overparameterization question. What about regularization? Under what conditions is zero regularization (i.e., perfectly interpolating the training data) optimal? We give a necessary and sufficient condition in terms of the task difficulty (a.k.a. the *source condition*), the kernel spectral decay (a.k.a. the *capacity condition*), and the intrinsic noise level. I did several experiments showing that (convolutional) neural tangent kernels learning vision tasks (e.g., CIFAR-10, MNIST, SVHN) are in this regime in which interpolation is near-optimal.
 
-![At optimal ridge, more features monotonically improves test performance. Train and test errors for RF regression closely match theory for both synthetic and natural data. Plots show traces with 256 training samples.](../_images/research/moreisbetter.png)
+![At optimal ridge, more features monotonically improves test performance. Train and test errors for RF regression closely match theory for both synthetic and natural data. Plots show traces with 256 training samples.](../_media/research/moreisbetter.png)
 
 ## Lazy (NTK) vs active (muP) training
 

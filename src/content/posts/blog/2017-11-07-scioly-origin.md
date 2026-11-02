@@ -12,7 +12,7 @@ Science Olympiad as a whole was an absolutely integral part of my time in high s
 
 My freshman year, I had swim practice after school, effectively precluding any other afterschool activity, including Science Olympiad. The scioly team went to nats that year and I was soooo jealous. Then I got onto the varsity swim team (morning practice) and I immediately signed up for the scioly team. Unfortunately, in my sophomore and junior years, our school was on the losing end of the "Texas bloodbath:" a state tournament with three highly competitive teams, only two of which advance to nationals.
 
-![squad (i'm holding mudkip)](../_images/scioly/team.png)
+![squad (i'm holding mudkip)](../_media/scioly/team.png)
 
 For the most part, I competed in engineering events; these involved designing and building devices that performed some desired task effectively and reliably. My senior year, I ended up having a change of pace. I picked up Astronomy, since a) one of our previous astronomy experts had graduated and needed a replacement, and b) I'd been interested in astronomy as a subject since childhood.
 
@@ -20,7 +20,7 @@ I acquired a digital copy of the classic textbook *Introduction to Modern Astrop
 
 My partner (who had more experience in the event) was absolutely crucial in guiding me in the right direction and offering useful competitive advice, as well as taking care of some of the celestial mechanics and other math that I wasn't so interested in. This combination of factors -- my interest and dedication, his guidance and experience, and surely a few moments of serendipity -- resulted in us placing 1st in the event at the state tournament. To add to my ecstasy, our team advanced to nationals, which would be my first time competing at that level. At nationals, my partner and I placed 2nd, which is a moment I'll always remember with great pride. Our team as a whole placed 6th overall -- the highest placement our school had ever achieved at nationals.
 
-![me and tom tryna drive an electric vehicle. am to the pm pm to the am RUN](../_images/scioly/ev.png)
+![me and tom tryna drive an electric vehicle. am to the pm pm to the am RUN](../_media/scioly/ev.png)
 
 The weeks immediately following nationals were a euphoric blur. Nationals had been a sort of catharsis of 3 years of tension for our team, and as a senior I was finally able to indulge myself in true senioritis. I spent a good amount of that time reflecting. It seemed fitting that I'd come full circle: my first scientific love as a kid was astronomy, and here I was again, rediscovering that passion in a new context, in a new light. And, in all truth, it was only through a series of happy coincidences that I even ended up in the Astronomy event in the first place, which made it feel even more special.
 

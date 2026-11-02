@@ -98,7 +98,7 @@ $$
 
 Tensors can only contract axes that share a vector space: if $$\mathbf{M}\in\mathbb{R}^{m\times n}$$ and $$\mathbf{v}\in\mathbb{R}^k$$, the contraction $$\mathbf{Mv}$$ is undefined.
 
-![How I imagine tensor contraction](../_images/contraction/contraction.gif)
+![How I imagine tensor contraction](../_media/contraction/contraction.gif)
 
 A contraction is a structure-reducing operation. I imagine that it's called "contraction" because it collapses large and unwieldy tensors towards structureless scalars. Because of their linearity, contractions are easily parallelizable, which is what gives modern GPUs a decisive computational advantage in computing tensor expressions.
 

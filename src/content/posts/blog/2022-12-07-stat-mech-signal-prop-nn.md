@@ -75,7 +75,7 @@ $$
 
 which has a fixed point at $$(\sigma_b^2, \sigma_w^2)=(0, 2)$$. The theory also predicts a semi-critical fixed line at $$\sigma_b^2>0$$ and $$\sigma_w^2=2$$, where the total correlator increases linearly but the correlator perturbations are at a fixed point. If the NN is initialized on a (semi)critical point, information about the geometric structure of the data can propagate through arbitrarily deep networks without exponentially vanishing or blowing up. As a result, these initialization schemes greatly enhance the trainability of very deep networks, which is exactly what is observed in practice:
 
-![Post-training performance on the MNIST dataset for ReLU networks, as a function of hyperparameters. As depth increases, criticality increasingly determines trainability, and the semicritical phase boundary becomes apparent. Figure adapted from Lee et al. 2017.](../_images/nn-sigprop/statphys-nn-phasediagram.png)
+![Post-training performance on the MNIST dataset for ReLU networks, as a function of hyperparameters. As depth increases, criticality increasingly determines trainability, and the semicritical phase boundary becomes apparent. Figure adapted from Lee et al. 2017.](../_media/nn-sigprop/statphys-nn-phasediagram.png)
 
 
 We can use this formalism to repeat this calculation for other choices of nonlinearity $$\phi$$. The result is that there exists a broad class of $$\phi$$ which do not permit a fixed point. Deep networks with these nonlinearities are not trainable. The takeaway is that the theory predicts both the unique success of $$\mathrm{ReLU}$$ as well as the Kaiming initialization scheme ($$\sigma^2_w=2$$) which is  widely used in practice.
