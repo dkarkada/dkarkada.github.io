@@ -67,6 +67,21 @@ img, video { max-width: 100%; height: auto; }
   --color-heading: oklch(var(--color-heading-params));
   --color-link: oklch(var(--color-link-params));
   --color-link-line: oklch(var(--color-secondary-params) / 0.8);
+  /* Widgets: one accent, rgb(103, 133, 171), shared by every widget; widget
+     text (labels, controls, tooltips) is a paler tint of the same hue */
+  --color-widget-accent-params: 0.609 0.068 254.6;
+  --color-widget-text-params: 0.45 0.03 255;
+  --color-widget-accent: oklch(var(--color-widget-accent-params));
+  --color-widget-text: oklch(var(--color-widget-text-params));
+  /* Widget controls: soft emboss, lit from the top left. Raised controls take
+     --widget-raise plus a rim border (--widget-rim-hi top/left, --widget-rim-lo
+     bottom/right); pressed ones take --widget-sink with the rim swapped */
+  --widget-raise: -1px -1px 2px oklch(1 0 0 / 0.06), 2px 2px 4px oklch(0 0 0 / 0.5);
+  --widget-sink: inset 1px 1px 3px oklch(0 0 0 / 0.55), inset -1px -1px 2px oklch(1 0 0 / 0.05);
+  --widget-rim-hi: oklch(1 0 0 / 0.13);
+  --widget-rim-lo: oklch(0 0 0 / 0.4);
+  --widget-knob-rim: inset 1px 1px 0 oklch(1 0 0 / 0.16), inset -1px -1px 0 oklch(0 0 0 / 0.35);
+  --widget-groove: inset 1px 1px 2px oklch(0 0 0 / 0.6), 0 1px 0 oklch(1 0 0 / 0.08);
   /* Admonition colors */
   --color-note: oklch(48.8% 0.243 264.376 / 0.8);
   --color-tip: oklch(50.8% 0.118 165.612 / 0.8);
@@ -79,6 +94,7 @@ img, video { max-width: 100%; height: auto; }
   --font-time: 'EB Garamond', Georgia, 'Times New Roman', Times, serif;
   --font-serif: Spectral, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-sans: Lato, ui-sans-serif;
+  --font-widget: CommitMono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 html.dark {
   --color-primary-params: 0.9 0.03 100;
@@ -94,6 +110,7 @@ html.dark {
   --color-heading-params: 0.92 0.014 65;
   --color-link-params: 0.86 0.03 100; /* 0.85 0.07 78; */
   --color-link-line: oklch(var(--color-link-params) / 0.45);
+  --color-widget-text-params: 0.8 0.03 255;
   --color-note: oklch(70.7% 0.165 254.624 / 0.8);
   --color-tip: oklch(76.5% 0.177 163.223 / 0.8);
   --color-important: oklch(71.4% 0.203 305.504 / 0.8);
