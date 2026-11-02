@@ -4,6 +4,8 @@ import Footer from '@/components/Footer.astro'
 import Anim from '../components/Anim.jsx';
 import Navbar from '@/components/Navbar.astro'
 import CodeCopyButton from '@/components/Widgets/CodeCopyButton.astro'
+import CollapsibleSections from '@/components/Widgets/CollapsibleSections.astro'
+import Footnotes from '@/components/Widgets/Footnotes.astro'
 import GithubCard from '@/components/Widgets/GithubCard.astro'
 import GsapAnimation from '@/components/Widgets/GsapAnimation.astro'
 import PhotoSwipe from '@/components/Widgets/PhotoSwipe.astro'
@@ -63,6 +65,8 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
     {animationEnabled && <GsapAnimation />}
     <SoundEffect />
     <CodeCopyButton />
+    <Footnotes />
+    <CollapsibleSections />
     <PhotoSwipe />
     <GithubCard />
   </body>

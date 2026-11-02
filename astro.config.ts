@@ -17,8 +17,10 @@ import { rehypeCodeCopyButton } from './src/plugins/rehype-code-copy-button.mjs'
 import { rehypeImgToFigure } from './src/plugins/rehype-img-to-figure.mjs'
 import { rehypeUnwrapImg } from './src/plugins/rehype-unwrap-img.mjs'
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.mjs'
+import { remarkCollapsibleHeadings } from './src/plugins/remark-collapsible-headings.mjs'
 import { remarkGithubCard } from './src/plugins/remark-github-card.mjs'
 import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
+import { remarkTooltipFootnotes } from './src/plugins/remark-tooltip-footnotes.mjs'
 import { remarkSmartypantsNoQuotes } from './src/plugins/remark-smartypants-no-quotes.mjs'
 import react from '@astrojs/react';
 
@@ -64,7 +66,9 @@ export default defineConfig({
     remarkPlugins: [
       remarkDirective,
       remarkMath,
+      remarkTooltipFootnotes,
       remarkAdmonitions,
+      remarkCollapsibleHeadings,
       remarkGithubCard,
       remarkReadingTime,
       remarkSmartypantsNoQuotes,

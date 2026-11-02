@@ -1,0 +1,70 @@
+<script>
+// Tooltip footnotes from remark-tooltip-footnotes: hover shows the note (CSS),
+// click toggles it open persistently, Escape closes all open notes.
+// Positioning keeps the tooltip inside the viewport.
+
+const MARGIN = 8
+
+function place(fn: Element) {
+  const body = fn.querySelector<HTMLElement>('.fn-body')
+  if (!body) {
+    return
+  }
+  body.style.setProperty('--fn-shift', '0px')
+  fn.classList.remove('fn-above')
+  const rect = body.getBoundingClientRect()
+  const vw = document.documentElement.clientWidth
+  let shift = 0
+  if (rect.left < MARGIN) {
+    shift = MARGIN - rect.left
+  }
+  else if (rect.right > vw - MARGIN) {
+    shift = vw - MARGIN - rect.right
+  }
+  body.style.setProperty('--fn-shift', `${shift}px`)
+  const refTop = fn.getBoundingClientRect().top
+  if (rect.bottom > window.innerHeight - MARGIN && refTop > rect.height + MARGIN) {
+    fn.classList.add('fn-above')
+  }
+}
+
+function closestFn(target: EventTarget | null, selector: string) {
+  return target instanceof Element ? target.closest(selector) : null
+}
+
+document.addEventListener('click', (e) => {
+  const ref = closestFn(e.target, '.fn-ref')
+  const fn = ref?.parentElement
+  if (!ref || !fn) {
+    return
+  }
+  const open = fn.classList.toggle('open')
+  ref.setAttribute('aria-expanded', String(open))
+  if (open) {
+    place(fn)
+  }
+})
+
+for (const type of ['mouseover', 'focusin']) {
+  document.addEventListener(type, (e) => {
+    const fn = closestFn(e.target, '.fn')
+    if (fn && !fn.classList.contains('open')) {
+      place(fn)
+    }
+  }, { passive: true })
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') {
+    return
+  }
+  document.querySelectorAll('.fn.open').forEach((fn) => {
+    fn.classList.remove('open')
+    fn.querySelector('.fn-ref')?.setAttribute('aria-expanded', 'false')
+  })
+})
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.fn.open').forEach(place)
+}, { passive: true })
+</script>

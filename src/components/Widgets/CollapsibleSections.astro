@@ -1,0 +1,42 @@
+<script>
+// Collapsible sections from remark-collapsible-headings: when an in-page link
+// (e.g. the TOC) or the URL hash targets a heading in a collapsed section, or
+// anything inside one, open every enclosing <details> so the target is visible.
+
+function openTo(id: string) {
+  const target = document.getElementById(id)
+  let details = target?.closest('details') ?? null
+  let opened = false
+  while (details) {
+    if (!details.open) {
+      details.open = true
+      opened = true
+    }
+    details = details.parentElement?.closest('details') ?? null
+  }
+  return opened ? target : null
+}
+
+function idFromHash(hash: string) {
+  return hash.length > 1 ? decodeURIComponent(hash.slice(1)) : ''
+}
+
+// Re-scroll after opening, since content that was hidden can't be scrolled to.
+function reveal(id: string) {
+  const target = id && openTo(id)
+  if (target) {
+    requestAnimationFrame(() => target.scrollIntoView())
+  }
+}
+
+// Capture phase, so sections open before the browser (or Astro's router) scrolls.
+document.addEventListener('click', (e) => {
+  const link = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('a[href^="#"]') : null
+  if (link) {
+    reveal(idFromHash(link.getAttribute('href') ?? ''))
+  }
+}, true)
+
+window.addEventListener('hashchange', () => reveal(idFromHash(location.hash)))
+document.addEventListener('astro:page-load', () => reveal(idFromHash(location.hash)))
+</script>

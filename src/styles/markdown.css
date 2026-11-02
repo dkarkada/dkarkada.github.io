@@ -45,6 +45,83 @@
   margin-top: 1rem;
 }
 
+/* Collapsible sections (`### > Title`, see remark-collapsible-headings) */
+.heti details.collapsible > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.heti details.collapsible > summary::-webkit-details-marker { display: none; }
+.heti details.collapsible > summary > :is(h1, h2, h3, h4, h5, h6)::before {
+  content: '';
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-right: 0.6em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  opacity: 0.6;
+  transform: translateY(-0.15em) rotate(-45deg);
+  transition: transform 0.2s ease;
+}
+.heti details.collapsible[open] > summary > :is(h1, h2, h3, h4, h5, h6)::before {
+  transform: translateY(-0.3em) rotate(45deg);
+}
+
+/* Tooltip footnotes (`[^fn: ...]`, see remark-tooltip-footnotes and Widgets/Footnotes.astro) */
+.heti .fn { position: relative; }
+.heti .fn-ref {
+  padding: 0 0.15em;
+  font-size: 0.75em;
+  font-weight: 500;
+  line-height: 0;
+  vertical-align: super;
+  color: oklch(var(--color-secondary-params) / 0.8);
+  cursor: pointer;
+}
+.heti .fn-ref:hover,
+.heti .fn.open .fn-ref { color: var(--color-primary); }
+.heti .fn-body {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 0.5em);
+  left: 50%;
+  transform: translateX(calc(-50% + var(--fn-shift, 0px)));
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.5em 0.75em;
+  font-size: 0.875rem;
+  font-weight: 300;
+  font-style: normal;
+  line-height: 1.5;
+  text-align: left;
+  text-indent: 0;
+  white-space: normal;
+  color: var(--color-primary);
+  background: var(--color-background);
+  border: 1px solid oklch(var(--color-secondary-params) / 0.25);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px oklch(0% 0 0 / 0.12);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+/* Invisible bridge over the gap, so the pointer can move from the number into the note. */
+.heti .fn-body::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.6em;
+  height: 0.6em;
+}
+.heti .fn.fn-above .fn-body { top: auto; bottom: calc(100% + 0.5em); }
+.heti .fn.fn-above .fn-body::before { top: auto; bottom: -0.6em; }
+@media (hover: hover) {
+  .heti .fn:hover .fn-body { visibility: visible; opacity: 1; }
+}
+.heti .fn.open .fn-body,
+.heti .fn-ref:focus-visible + .fn-body { visibility: visible; opacity: 1; }
+
 /* Paragraphs */
 .heti :where(p) {
   margin-bottom: 1rem;
