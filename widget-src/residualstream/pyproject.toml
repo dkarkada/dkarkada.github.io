@@ -1,0 +1,23 @@
+[project]
+name = "residualstream-widget"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "dkexpt",
+    "einops>=0.8",
+    "numpy>=2.0",
+]
+
+[dependency-groups]
+# Only needed on the GPU pod (extract.py); pca.py runs locally without them.
+extract = [
+    "accelerate>=1.0",
+    "torch>=2.5",
+    "transformers>=4.57",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+dkexpt = { git = "https://github.com/dkarkada/dkexpt" }

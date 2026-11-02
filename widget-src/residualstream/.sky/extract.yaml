@@ -1,0 +1,31 @@
+name: rs-extract
+
+resources:
+  cloud: runpod
+  accelerators: {L40S:1, A100-80GB:1}
+  disk_size: 100
+
+# pyproject.toml, uv.lock, and launch.sh all live in this dir, so workdir
+# carries everything (no file_mounts needed, unlike the research template).
+workdir: .
+
+secrets:
+  R2_ACCESS_KEY_ID:
+  R2_SECRET_ACCESS_KEY:
+
+envs:
+  R2_ENDPOINT_URL: https://d9490edc1a9fa6e813c79cd87b7d4e11.r2.cloudflarestorage.com
+  R2_BUCKET: mybucket
+  HF_XET_HIGH_PERFORMANCE: "1"
+
+setup: |
+  set -euo pipefail
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  source "$HOME/.local/bin/env"
+  uv sync --frozen --group extract
+
+# The widget uses "dm"; md, md-period, and dm-ordinal were also run for
+# comparison (see extract.py) and are on R2.
+run: |
+  source "$HOME/.local/bin/env"
+  bash launch.sh --local extract.py dm
