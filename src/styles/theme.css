@@ -61,6 +61,12 @@ img, video { max-width: 100%; height: auto; }
   --color-secondary: oklch(var(--color-secondary-params));
   --color-background: oklch(var(--color-background-params));
   --color-highlight: oklch(0.93 0.195089 103.2532 / 0.5);
+  /* Post titles + section headers, and in-post links */
+  --color-heading-params: var(--color-primary-params);
+  --color-link-params: var(--color-primary-params);
+  --color-heading: oklch(var(--color-heading-params));
+  --color-link: oklch(var(--color-link-params));
+  --color-link-line: oklch(var(--color-secondary-params) / 0.8);
   /* Admonition colors */
   --color-note: oklch(48.8% 0.243 264.376 / 0.8);
   --color-tip: oklch(50.8% 0.118 165.612 / 0.8);
@@ -83,6 +89,11 @@ html.dark {
      ~1.456, taking oklch(0.172 0.024 280) to rgb(20,21,38). */
   --color-background-params: 0.205 0.033 280;
   --color-highlight: oklch(0.28 0.05 275);
+  /* Apricot white headers (lighter, paler, slightly warmer than the text);
+     streetlamp-amber links */
+  --color-heading-params: 0.92 0.014 65;
+  --color-link-params: 0.86 0.03 100; /* 0.85 0.07 78; */
+  --color-link-line: oklch(var(--color-link-params) / 0.45);
   --color-note: oklch(70.7% 0.165 254.624 / 0.8);
   --color-tip: oklch(76.5% 0.177 163.223 / 0.8);
   --color-important: oklch(71.4% 0.203 305.504 / 0.8);

@@ -17,6 +17,7 @@
   font-size: 1.9rem;
   font-weight: 600;
   font-family: var(--font-title);
+  color: var(--color-heading);
 }
 @media (min-width: 1024px) {
   .heti .post-title { font-size: 2rem; }
@@ -26,11 +27,12 @@
 .heti :where(h1, h2, h3, h4, h5, h6) {
   margin-bottom: 1rem;
   margin-top: 1.5em;
-  font-weight: 600;
+  font-weight: 500;
   font-family: var(--font-title);
+  color: var(--color-heading);
 }
-.heti :where(h1) { font-size: 1.55rem; color: var(--color-primary); }
-.heti :where(h2) { font-size: 1.35rem; color: var(--color-primary); }
+.heti :where(h1) { font-size: 1.55rem; }
+.heti :where(h2) { font-size: 1.35rem; }
 .heti :where(h3) { font-size: 1.15rem; }
 .heti :where(h4) { font-size: 1rem; }
 .heti :where(h5) { font-size: 0.9375rem; }
@@ -50,15 +52,17 @@
   font-family: var(--font-serif);
   font-size: 1rem;
   line-height: 1.4rem;
+  font-weight: 300;
 }
 
 /* Links */
 .heti :where(a:not(.gc-container)) {
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0;
   text-decoration-line: underline;
+  color: var(--color-link);
   text-decoration-thickness: 0.075em;
-  text-decoration-color: oklch(var(--color-secondary-params) / 0.8);
+  text-decoration-color: var(--color-link-line);
   text-underline-offset: 0.1em;
   transition-property: color, text-decoration-color;
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
@@ -68,6 +72,7 @@
   color: var(--color-primary);
   text-decoration-color: oklch(var(--color-primary-params) / 0.8);
 }
+.heti .heading-anchor-link { color: inherit; }
 @media (min-width: 1024px) {
   .heti :where(a:not(.gc-container)) {
     text-decoration-thickness: 0.1em;
@@ -324,7 +329,7 @@ html.dark .heti :where(u) {
 }
 
 /* Bold */
-.heti :where(b, strong) { font-weight: 600; }
+.heti :where(b, strong) { font-weight: 500; }
 
 /* Italic */
 .heti :where(em) { font-style: italic; }
