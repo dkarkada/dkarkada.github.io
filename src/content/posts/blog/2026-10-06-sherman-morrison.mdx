@@ -1,0 +1,405 @@
+---
+title: "Deriving the Sherman-Morrison and block inverse formulas"
+published: 2026-10-06
+description: ...and using them to solve linear regression, DMFT cavity, effective regularization of KRR, etc.
+tags:
+  - science
+abbrlink: sherman-morrison
+hidden: False
+---
+
+import skewUrl from '../_media/sherman/skew.js?url'
+import cavityUrl from '../_media/sherman/cavity.js?url'
+import cavityDataUrl from '../_media/sherman/cavity.json?url'
+
+In many high-dimensional linear problems, I want to calculate how one variable (or coordinate) responds to constraints on the remaining. Here are some examples.
+
+1. *High-dimensional linear regression.* We have a random function "vector" $y(x)$ whose expected covariance is known. We want to find an equation that predicts a single element $y(x_0)$ conditioned on observations $\{y(x_i)\}_i$ at several other training points.
+2. *Disordered linear dynamical systems.* We have a large system of sites, arranged into a vector $h$, which undergo random coupled dynamics. We want to find an equation to describe the dynamics of a single site after marginalizing out the effects of the other sites. This is a rich system; Blake gives a nice introduction in his [2026 review paper](https://arxiv.org/pdf/2601.01010) with Cengiz Pehlevan, and Mark wrote up a [detailed walkthrough of it on his blog](https://mrkdh16.github.io/markedown/A-Learning-Mechanic's-Toolkit/Deep-Dives/All-the-math-I-learned-from-DMFT).
+3. *Gaussian free field.* We have a free field $\phi(x)$ with kinetic operator $L = -\nabla^2 + m^2$. We place a point source at the endpoint $x_0$ of a semi-infinite 1D lattice. What's $\phi(x_0)$?
+
+These might sound like very different problems, but they're not. They are all linear problems that can be solved by the [matrix block inversion formula](https://en.wikipedia.org/wiki/Block_matrix#Inversion). Sadly, this formula is pretty opaque imo, and I wanted to better understand where it comes from. There are a few derivations on Wikipedia that didn't shed much light for me. So, on a plane ride back from NYC, I re-derived it using the Sherman-Morrison formula for inverting a rank-one perturbation of a given matrix.
+
+The point of this blog post is to give an intuitive and geometric walkthrough of this derivation. First, I'll show you why these problems boil down to blockwise matrix inversion, which is itself equivalent to a Sherman-Morrison problem. Then, I'll show you how to derive the Sherman-Morrison identity using fairly simple geometric arguments. As a fun exercise, we'll use Sherman-Morrison to derive the bias term for the [generalization error of over-parameterized linear regression](https://arxiv.org/abs/2110.03922). Then we'll use it to finally derive the block-inversion formula. At the end, I'll use the block-inversion formula to show you how to solve those three problems above.
+
+{/* If I'm brave and disciplined, I'll write a second blog post that connects these ideas to Gaussian integral problems, the Hubbard-Stratonovich transformation, Legendre duals, etc. When that happens, link will be here: \{I AM CURRENTLY NEITHER BRAVE NOR DISCIPLINED\} */}
+
+## Block inversion
+The core of all three motivating examples lies in the linear relation
+
+$$
+\left[\begin{array}{c}
+  f_0 \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} f_b
+\end{array}\right]
+=
+\left[\begin{array}{c:c}
+  M_{00} & \qquad M_{b0}^\top \qquad \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} M_{b0} & \qquad M_{bb} \qquad
+\end{array}\right]
+\left[\begin{array}{c}
+  v_0 \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} v_b
+\end{array}\right]
+$$
+
+where $f$ and $v$ are both only partially-known to us (the problem will be to solve for some unknown part of one of them), and the interaction matrix $M$ is symmetric and known.
+
+The problems we're interested in concern isolating the behavior of a single site (wlog, index 0), which I've depicted separated from all the rest. This extra structure makes the problem a bit more interesting than standard linear regression -- in some sense it precludes spectral approaches, since we have fixed a particular basis (the site basis). Due to its basis dependence, this setting invites analysis of linear interactions between "system" or "site" variables (the scalars $f_0$ and $v_0$) and the remaining "bath" variables (the subvectors $f_b$ and $v_b$). In this framing, $M_{00}$ is the site-site interaction, $M_{b0}$ and $M_{b0}^\top$ are site-bath couplings, and $M_{bb}$ is the bath-bath interaction.
+
+Let's be concrete.
+
+1. *High-dimensional linear regression.* Here, $f = Mv$ is more commonly written as $y=K\alpha$, where $K$ is the gram matrix:
+
+   $$
+   \left[\begin{array}{c}
+     y_\mathrm{test} \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} y_\mathrm{train}
+   \end{array}\right]
+   =
+   \left[\begin{array}{c:c}
+     K(x_\mathrm{test}, x_\mathrm{test}) & \qquad K(x_\mathrm{test}, x_\mathrm{train}) \qquad \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} K(x_\mathrm{train}, x_\mathrm{test}) & \qquad K(x_\mathrm{train}, x_\mathrm{train}) \qquad
+   \end{array}\right]
+   \left[\begin{array}{c}
+     \alpha_\mathrm{test} \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} \alpha_\mathrm{train}
+   \end{array}\right].
+   $$
+
+   The vector $\alpha$ contains the dual/representer coefficients; we don't know them, although we do know the training labels $y_\mathrm{train}$, and we know $\alpha_\mathrm{test} = 0$ (since the test point shouldn't influence $\alpha_\mathrm{train}$). We want to solve for $y_\mathrm{test}$.
+
+2. *Disordered linear dynamical systems.* We have $j(t) = (A + \frac{d}{dt})h(t)$, where $A$ is the random interaction matrix and $j(t)$ is an external drive:
+
+   $$
+   \left[\begin{array}{c}
+     j_0(t) \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} j_b(t)
+   \end{array}\right]
+   =
+   \left[\begin{array}{c:c}
+     A_{00} + \frac{d}{dt} & \qquad A_{b0}^\top \qquad \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} A_{b0} & \qquad A_{bb} + \frac{d}{dt} \qquad
+   \end{array}\right]
+   \left[\begin{array}{c}
+     h_0(t) \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} h_b(t)
+   \end{array}\right].
+   $$
+
+   Thus each block is an operator on functions of time. Since $\frac{d}{dt}$ acts on each site independently, it only appears in the diagonal blocks, and the site-bath blocks are just the couplings $A_{b0}^\top$ and $A_{b0}$. We don't know the bath trajectories $h_b(t)$, although we do know the drive $j(t)$ at every site. We want to solve for $h_0(t)$ in terms of $j(t)$.
+
+3. *Gaussian free field.* We have $j = L\phi$, where $L$ is the kinetic operator $-\nabla^2 + m^2$ on a semi-infinite 1D lattice and $j$ is an external source:
+
+   $$
+   \left[\begin{array}{c}
+     j(x_0) \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} j(x_b)
+   \end{array}\right]
+   =
+   \left[\begin{array}{c:c}
+     L(x_0, x_0) & \qquad L(x_0, x_b) \qquad \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} L(x_b, x_0) & \qquad L(x_b, x_b) \qquad
+   \end{array}\right]
+   \left[\begin{array}{c}
+     \phi(x_0) \\[0.4em] \hdashline
+     \rule[-2em]{0pt}{4.5em} \phi(x_b)
+   \end{array}\right].
+   $$
+
+   Concretely, $L(x, x) = 2 + m^2$, $L(x, x \pm 1) = -1$, and all other entries are zero; $x_0$ is the endpoint of the lattice. The source is localized: $j(x_0) = 1$ and $j(x_b) = 0$. We don't know the field anywhere; we want to solve for $\phi(x_0)$.
+
+Clearly, to solve these problems, we must invert $M$ in terms of the blocks of $M$. One way to do it, which is algebraically straightforward but not very intuitive to me, is to just solve $MM^{-1}=I$ blockwise. Here, I'll show another way, using the Sherman-Morrison formula.
+
+For simplicity of notation, I'll write the blocks of $M$ like this:
+
+$$
+\begin{bmatrix} s & c^\top \\ c & B \end{bmatrix}
+:=
+\begin{bmatrix} M_{00} & M_{b0}^\top \\ M_{b0} & M_{bb} \end{bmatrix}
+$$
+
+where $s$ (for "site") is a scalar, $c$ (for "coupling") is a vector, and $B$ (for "bath") is a matrix.
+
+If you try to invert this, you'll quickly realize that the site-bath coupling is the annoying part. If we nixed it, $c=0$, then we'd have
+
+$$
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1}
+=
+\begin{bmatrix} 1/s & 0 \\ 0 & B^{-1} \end{bmatrix}
+$$
+
+since that's how block-diagonal matrices work. This is intuitive -- the site and the bath don't talk, so their inverses are independent. Can we just sneak the coupling back in somehow? A useful starting observation is that the uncoupled interaction matrix is a low-rank perturbation of the full interaction matrix:
+
+$$
+M =
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}
++ e\,p^\top + p\, e^\top
+$$
+
+where $p^\top = [\,0 \;\; c^\top\,]$ and $e = [1, 0, \dots, 0]^\top$ is the first canonical basis vector. The problem has now transformed: we want to invert a low-rank perturbation of a matrix whose inverse we already know. This is where the Sherman-Morrison formula comes in.
+
+## A visual derivation of the Sherman-Morrison formula
+
+Let's start with a simpler problem:
+
+$$
+(A + pq^\top)^{-1} = (I + A^{-1}pq^\top)^{-1} A^{-1} =: (I + \tilde p q^\top)^{-1} A^{-1}
+$$
+
+where I defined $\tilde p = A^{-1}p$. Clearly, the inverse of a rank-one perturbation of $A$ can be interpreted as a composition: first the unperturbed inverse, then a multiplicative correction from the perturbation. This correction is the inverse of a rank-one perturbation of the _identity_. (We're assuming that everything is invertible when we need it to be. Sue me.)
+
+Ok, so what's that multiplicative correction? Let's understand what's going on geometrically. The transformation $v' = (I + \tilde p q^\top)v$ basically says: "Return the original vector $v$, but skewed along direction $\tilde p$, and the amount of skew is equal to the overlap of $q$ and $v$."
+
+<figure class="skew-figure">
+<div data-skew-widget></div>
+<figcaption>
+
+The transformation $v' = (I + \tilde p q^\top)\, v$ in 2D. Each hollow dot is a point $v$, and its arrow points to its image $v'$ (solid dot). Every $v$ skews along $\tilde p$ (blue) with magnitude $q^\top v$, so the points on the dashed line $q^\top v = 0$ don't move, and points further from it skew further. Drag the tips of $\tilde p$ and $q$ to change them.
+
+</figcaption>
+</figure>
+<script type="module" src={skewUrl}></script>
+
+So then $(I + \tilde p q^\top)^{-1}$ is the "un-skew" operation: from $v'$ we should subtract $(q^\top v)\tilde p$. Of course, we need to express this in terms of $v'$, not $v$. We can do this by just computing
+
+$$
+q^\top v' = q^\top (I + \tilde p q^\top) v = (q^\top v)(1 + q^\top \tilde p)
+$$
+
+which immediately gives $q^\top v = q^\top v' / (1 + q^\top \tilde p)$. Basically, we're measuring the overlap of $q$ and the original input $v$ by first measuring the overlap between $q$ and the transformed $v'$, and then correcting for the extra skew, which would've pushed $v$ further along $q$, if it isn't orthogonal to $\tilde p$. Rewriting this same argument mathematically, we get
+
+$$
+\begin{aligned}
+(I + \tilde p q^\top)^{-1} v' &= v' - \tilde p\,(q^\top v) = v' - \frac{\tilde p\, q^\top v'}{1 + q^\top \tilde p} \\
+&= \left(I - \frac{\tilde p\, q^\top}{1 + q^\top \tilde p}\right) v'
+\end{aligned}
+$$
+
+That's it! We solved for the inverse using a simple geometric argument. Putting it all together:
+
+$$
+\begin{aligned}
+(A + pq^\top)^{-1} &= (I + A^{-1}pq^\top)^{-1} A^{-1} \\
+&= \left(I - \frac{A^{-1}p\, q^\top}{1 + q^\top A^{-1} p}\right) A^{-1} \\
+&= A^{-1} - \frac{A^{-1}p\, q^\top A^{-1}}{1 + q^\top A^{-1} p}
+\end{aligned}
+$$
+
+We derived the Sherman-Morrison formula. My interpretation is that the perturbed inverse is basically just the original inverse, followed by a rank-one correction along the skew direction. The normalizing term $q^\top A^{-1} p$ in the denominator is critical: it ensures that we don't overestimate the effect of the perturbation.
+
+### The bias term of generalization in linear regression
+
+This is an aside unrelated to the rest of the blog post, so you can safely skip it, but I thought it was cool. We can use the Sherman-Morrison formula to describe the expected bias of linear regression in the overparameterized (limited data) regime. Here's how.
+
+The data matrix is $X$. It is short and stout: the rows (which index the data samples) are quite outnumbered by the columns (which index the input dimension). We should think of $X$ as a random variable: we've drawn some particular samples from a Gaussian distribution with _expected_ covariance $\Lambda$. Let's work in the PCA basis of the input distribution, so $\Lambda$ is diagonal. We'll assume $\Lambda$ is full-rank. This is quite different from the _sample_ covariance $X^\top X$, which is singular due to the overparameterization.
+
+The labels are scalar, noiseless, linear: $y = w_\star^\top x$. You can add noise later if you want, but here I'll keep things simple. The estimator, without regularization, is well-known: $\hat w(X) = P w_\star$, where $P$ is the projector onto the subspace spanned by the data samples. This projector has a null space due to the overparameterization.
+
+For a given $X$, the weight-space error[^fn: The typical function-space MSE is almost the same thing, just reweighted by $\Lambda$. I'm leaving it out for notational clarity, it's easy to add back in.] is $\mathcal{E}(X) = \lVert w_\star - \hat w(X) \rVert^2$. However, we want to know what happens on average. Taking expectation over $X$, we get
+
+$$
+\begin{aligned}
+\mathbb{E}_X[\mathcal{E}(X)] &= \mathbb{E}_X\!\left[\big\lVert w_\star - \hat w(X) \big\rVert^2\right] \\
+&= \underbrace{\big\lVert w_\star - \mathbb{E}_X[\hat w(X)] \big\rVert^2}_{\text{bias}}
++ \underbrace{\mathbb{E}_X\!\left[\big\lVert \hat w(X) - \mathbb{E}_X[\hat w(X)] \big\rVert^2\right]}_{\text{variance}}
+\end{aligned}
+$$
+
+The variance term is highkey kinda annoying to calculate. We can get a pretty good idea of how generalization works by simply studying the bias term, so let's just do that. The object we need to understand is $\mathbb{E}_X[X^\top (XX^\top)^{-1}X]$, since
+
+$$
+\mathbb{E}_X[\hat w(X)]=\mathbb{E}_X[P w_\star] = \mathbb{E}_X\big[X^\top (XX^\top)^{-1}X\big] w_\star
+$$
+
+using the formula for the projector onto $X$. Let the $i$-th column of $X$ be denoted $\psi_i$; this vector contains the $i$-th PCA component of every $x$ in the dataset. Then the $(i, j)$ element of $P$ is
+
+$$
+P_{ij} = \psi_i^\top \Big(\sum_k \psi_k \psi_k^\top\Big)^{-1} \psi_j .
+$$
+
+The first thing to notice is that if we reflect the $i$-th coordinate of every $x$, $\psi_i \to -\psi_i$, then for every $j \neq i$ we've just flipped the sign of $P_{ij}$. However, since $x$ is drawn Gaussian, and we're in the PCA basis, this reflection doesn't change the underlying distribution. So, by symmetry, the expectation of every off-diagonal element must be zero.
+
+So, $\mathbb{E}_X[P]$ is diagonal. Let's solve for the diagonal elements:
+
+$$
+\begin{aligned}
+P_{ii} &= \psi_i^\top \big(\psi_i \psi_i^\top + K_{\setminus i}\big)^{-1} \psi_i
+\qquad \Big(\text{where } K_{\setminus i} := \sum_{k \neq i} \psi_k \psi_k^\top\Big) \\
+&= \psi_i^\top K_{\setminus i}^{-1} \psi_i - \frac{\big(\psi_i^\top K_{\setminus i}^{-1} \psi_i\big)^2}{1 + \psi_i^\top K_{\setminus i}^{-1} \psi_i} \\
+&= \frac{q_i}{1 + q_i}.
+\end{aligned}
+$$
+
+In the second step I used Sherman-Morrison and simplified. In the third step I just renamed $q_i := \psi_i^\top K_{\setminus i}^{-1} \psi_i$ and simplified more. With enough samples, we expect the quantity $q_i$ to concentrate, since $\psi_i$ contains random Gaussian variables of size $\sqrt{\lambda_i}$, and $K_{\setminus i}$ is independent of them. Let's separate the $i$-dependent part ($\lambda_i$) from the rest, which concentrates to a quantity we'll call $\kappa$: 
+
+$$
+q_i \approx \frac{\lambda_i}{\kappa}
+\implies
+\mathbb{E}_X\big[P_{ii}\big] \approx \frac{\lambda_i}{\lambda_i + \kappa} .
+$$
+
+All together, we get $\mathbb{E}_X[P] \approx \Lambda (\Lambda + \kappa I)^{-1}$, and it satisfies the equation $\mathrm{Tr}[\Lambda (\Lambda + \kappa I)^{-1}] = n$ since $P$ is a projector onto the $n$-dimensional subspace spanned by the $n$ samples. Notice that this solution is exactly what ridge regression with ridge $\kappa$ would give if it had access to the population covariance $\Lambda$. For this reason, the constant $\kappa$ is called the _effective regularization_: even though we didn't explicitly regularize, the finite dataset _acts like_ a ridge. Directions with $\lambda_i \gg \kappa$ are learned, and directions with $\lambda_i \ll \kappa$ are not. Plugging this into the (weight-space) bias term,
+
+$$
+\text{bias} = \Big\lVert \big(I - \mathbb{E}_X[P]\big) w_\star \Big\rVert^2 \approx \sum_i \left(1-\frac{\lambda_i}{\lambda_i + \kappa}\right)^2 w_{\star, i}^2 .
+$$
+
+## Deriving the block inverse formula
+
+Recall that the problem we're _actually_ interested in is
+
+$$
+M^{-1} =
+\left(\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}
++ e\,p^\top + p\, e^\top\right)^{-1}
+$$
+
+where $p^\top = [\,0 \;\; c^\top\,]$ contains the couplings, and $e = [1, 0, \dots, 0]^\top$ is the first canonical basis vector. Now we'll do the same thing as before. First we factor out the uncoupled part:
+
+$$
+M^{-1} =
+\left( I + e\,q^\top + \tilde p\, e^\top\right)^{-1}
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1}
+$$
+
+where $\tilde p^\top := [\,0 \;\; (B^{-1}c)^\top\,]$ contains the coupling as seen through the _uncoupled_ inverse, and $q := p/s$. I'll leave it as an exercise to go through the same steps as before; as a hint, it's useful to observe that $e^\top e=1$ and $e^\top q = e^\top \tilde p = 0$. It's also useful to define $g:=q^\top \tilde p=\frac{1}{s}c^\top B^{-1} c$. If you do the calculation, you find that
+
+$$
+\begin{aligned}
+M^{-1}
+&= \left( I - \frac{1}{1-g} \left( e\,q^\top + \tilde p\, e^\top - \tilde p\,q^\top - g\, e\, e^\top \right) \right)
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1} \\[1.5em]
+&= \left( I - \frac{1}{1-g} \begin{bmatrix} -g & c^\top / s \\ B^{-1}c & -B^{-1}c\,c^\top / s \end{bmatrix} \right)
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1} \\[1.5em]
+&= \begin{bmatrix}
+\dfrac{1}{s(1-g)} & \qquad -\dfrac{c^\top B^{-1}}{s(1-g)} \\[2em]
+-\dfrac{B^{-1}c}{s(1-g)} & \qquad B^{-1} + \dfrac{B^{-1}c\,c^\top B^{-1}}{s(1-g)}
+\end{bmatrix}
+\end{aligned}
+$$
+
+That's it -- the block inverse formula! We took many more steps than direct computation with Gaussian elimination, but in exchange we learn what each term _means_:
+
+1. Our quantity $\tilde p$ is exactly analogous to the $\tilde p$ from the Sherman-Morrison derivation. It represents the coupling that remains after we factor out the _uncoupled_ inverse. That's why it shows up in the off-diagonals of $M^{-1}$.
+2. Since $\tilde p e^\top$ skews the bath variables according to the first site's activity, and $e q^\top$ skews the site variable according to the bath's activity, the quantity $g=q^\top \tilde p$ is a gain, or echo: it measures the strength of the round-trip effect of the site on itself through the bath.
+3. Therefore $1/(1-g)= 1 + g + g^2 + g^3 + \dots$ is the cumulative effect of all the echoes, cycling through the site and the bath and back to the site again, multiple times.
+4. It's worth noting that $s(1-g)$ is the [Schur complement](https://en.wikipedia.org/wiki/Schur_complement). I think this whole exercise gives some intuition for the meaning of this quantity.
+
+## Solving those problems
+
+Now I'll show you how to solve the problems at the beginning of the blogpost.
+
+### Linear regression
+
+We have $y=K\alpha$, where $K$ is the gram matrix:
+
+$$
+\left[\begin{array}{c}
+  y_\mathrm{test} \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} y_\mathrm{train}
+\end{array}\right]
+=
+\left[\begin{array}{c:c}
+  K(x_\mathrm{test}, x_\mathrm{test}) & \qquad K(x_\mathrm{test}, x_\mathrm{train}) \qquad \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} K(x_\mathrm{train}, x_\mathrm{test}) & \qquad K(x_\mathrm{train}, x_\mathrm{train}) \qquad
+\end{array}\right]
+\left[\begin{array}{c}
+  \alpha_\mathrm{test} \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} \alpha_\mathrm{train}
+\end{array}\right].
+$$
+
+The vector $\alpha$ contains the dual/representer coefficients; we don't know them, although we do know the training labels $y_\mathrm{train}$, and we know $\alpha_\mathrm{test} = 0$ (since the test point shouldn't influence $\alpha_\mathrm{train}$). We want to solve for $y_\mathrm{test}$.
+
+Easy peasy. Let's invert, $K^{-1} y = \alpha$, and just read off the top row. We get
+
+$$
+\begin{aligned}
+\alpha_\mathrm{test}
+&= \frac{1}{s(1-g)} \big( y_\mathrm{test} - c^\top B^{-1} y_\mathrm{train} \big) \\
+&= \frac{1}{s(1-g)} \big( y_\mathrm{test} - K(x_\mathrm{test}, x_\mathrm{train})\, K(x_\mathrm{train}, x_\mathrm{train})^{-1} y_\mathrm{train} \big) \\
+&= 0.
+\end{aligned}
+$$
+
+This gives the kernel regression formula:
+
+$$
+y_\mathrm{test} = K(x_\mathrm{test}, x_\mathrm{train})\, K(x_\mathrm{train}, x_\mathrm{train})^{-1} y_\mathrm{train}.
+$$
+
+It's super easy to add a ridge regularizer and get the general KRR formula.
+
+### Disordered linear dynamical systems
+
+We have $j(t) = (A + \frac{d}{dt})h(t)$, where $h(t)$ is a vector function of time whose elements are the site activities, $j(t)$ is the per-site external drive, and $A$ is the time-independent interaction matrix. We don't know the bath trajectories $h_b(t)$, although we do know the drive $j(t)$ at every site. We want to solve for the site activity $h_0(t)$ in terms of $j(t)$.
+
+Of course, we do the same thing as before: invert and read off the equation block-by-block. The trouble here is that $M$ contains $d/dt$, which is a bit hard to handle. Things will get a lot easier if we Fourier transform, since this takes $d/dt$ to $i\omega$, i.e., just a scalar times the identity matrix:
+
+$$
+(A + i\omega)^{-1} \tilde\jmath = \tilde h
+$$
+
+Here I'm using tildes to denote Fourier-space variables, i.e., functions of $\omega$. Now _this_ we can easily invert blockwise, using $s=A_{00} + i\omega$, $c=A_{b0}$, and $B=A_{bb}+i\omega$, and reading off the top row:
+
+$$
+\tilde h_0 = \frac{1}{A_{00} + i\omega - \tilde r} \Big( \tilde\jmath_0 - A_{b0}^\top (A_{bb}+i\omega)^{-1}\, \tilde\jmath_b \Big)
+$$
+
+where I've introduced $\tilde r := A_{b0}^\top (A_{bb}+i\omega)^{-1} A_{b0}$. A few comments on $\tilde r$. Since $\tilde r= sg$, you can think of it as a rescaled gain/echo factor. Also, since $A_{b0}$ is independent of $A_{bb}$, in the large-bath limit the quadratic form concentrates and becomes the "deterministic equivalent" $\tilde r \propto \mathrm{Tr}[(A_{bb}+i\omega)^{-1}]$. Finally, a note on nomenclature: in this particular problem, $\tilde r$ is often called the _memory kernel_ (it'll become clear why later).
+
+Our equation for $\tilde h_0$ is, in some sense, complete: it does not directly depend on the other site trajectories. But, the annoying thing about our equation is that it still depends on all the other bath variables. We'd like to simplify this somehow, to "average out" the effect of the bath. To do this, I'll refer you back to point 1 in the earlier numbered list, which says that $A_{b0}^\top (A_{bb}+i\omega)^{-1}\, \tilde\jmath_b$ is the coupling to the counterfactual _uncoupled_ bath activities (since, if $A_{b0}=0$, then $(A_{bb}+i\omega)^{-1}\, \tilde\jmath_b = \tilde h_b$). So then we get
+
+$$
+\tilde h_0 = \frac{1}{A_{00} + i\omega - \tilde r} \Big( \tilde\jmath_0 - A_{b0}^\top\, \tilde h_{b\setminus 0} \Big)
+$$
+
+where $h_{b\setminus 0}$ is called the _cavity field_: it contains the counterfactual bath activities if we removed $h_0$ entirely. If $A$ contains random interaction couplings, then its dot product with the cavity field $\tilde h_{b\setminus 0}$ converges to a Gaussian process in the large-bath limit by central limit theorem. The covariance of the GP is just the covariance of $\tilde h_{b\setminus 0}$. More on this later.
+
+We've now killed all the bath variables. After rearranging, here's what's left:
+
+$$
+i\omega\, \tilde h_0 = -A_{00}\tilde h_0 + \tilde\jmath_0 + \tilde{\mathrm{GP}} + \tilde r\, \tilde h_0
+$$
+
+Now we finally Fourier transform back, using the convolution theorem for the product $\tilde r \,\tilde h_0$:
+
+$$
+\frac{d}{dt} h_0(t) = -A_{00}\, h_0(t) + j_0(t) + \mathrm{GP}(t) + \int_{-\infty}^{t} dt'\, r(t-t')\, h_0(t')
+$$
+
+This is quite amazing: we have an ODE for a single site's dynamics that explicitly depends only on the site's own history (through the memory kernel $r$) and its own external drive $j_0$. The dependence on the bath is implicit; it lives in the covariance of the Gaussian process noise term, and in the functional form of $r$. To actually solve this ODE, we need to pin both of these down. This is where we finally use the _cavity approximation_: we assert that all elements of $h$ are essentially the same in character (i.e., they share the same noise covariance and the same memory kernel), and we can use a self-consistency argument to solve for both. This is beyond the scope of this blog post, so I'll refer you to [Mark's blogpost](https://mrkdh16.github.io/markedown/A-Learning-Mechanic's-Toolkit/Deep-Dives/All-the-math-I-learned-from-DMFT) and [Blake's paper](https://arxiv.org/pdf/2601.01010) for more info.
+
+<figure class="cavity-figure">
+<div data-cavity-anim data-src={cavityDataUrl}></div>
+<figcaption>
+
+**(Left.)** A system of interacting sites. Each site's color is its activity $h_i(t)$, and the size of its halo is its external drive $j_i(t)$. The cavity site is circled, and one of its neighbors has a dashed circle. **(Top Right.)** The cavity site's true trajectory (solid) is well predicted by the single-site equation we derived (dashed). The faint envelope shows the memory kernel $r$. **(Bottom right.)** The neighbor site's true trajectory (solid) stays close to the counterfactual sans-cavity-site field (dashed).
+
+</figcaption>
+</figure>
+<script type="module" src={cavityUrl}></script>
+
+To recap, the main cavity idea here is exact: it follows from the block-inverse formula, which is straight up correct. Then, to simplify _even more_, we make the following extra approximations:
+* concentration of the memory kernel $r$ to a deterministic limit (as bath gets large)
+* cavity approximation: when we remove the site, nothing much changes in the bath (at least, as far as its correlations are concerned). This gives self-consistency: noise covariance and memory kernel are shared across all sites.
+
+### Gaussian free field
+
+We have $j = L\phi$, where $L$ is the discretized $-\nabla^2 + m^2$ on a semi-infinite 1D lattice with endpoint $x_0$: $L(x, x) = 2 + m^2$, $L(x, x \pm 1) = -1$, and zero otherwise. The source is $j(x_0)=1$ and zero otherwise. We want $\phi(x_0)$. I'll leave this one as an exercise :--) Hint: solving for $r=sg$ will involve a self-consistency argument (note that the bath itself is self-similar to the site+bath system). Another hint: make sure the system is well-behaved in the large-mass limit.
+
+In the end, you should get
+
+$$
+\begin{align*}
+r &= \frac{1}{2 + m^2 - r}
+\quad\implies\quad
+r = \frac{(2 + m^2) - \sqrt{(2+m^2)^2 - 4}}{2} \\
+\phi(x_0) &= \frac{1}{2 + m^2 - r} = r.
+\end{align*}
+$$
+
+As an extra challenge, try to find the field $\phi$ everywhere.
+
+As another extra challenge, try the full infinite chain, with $x_0$ somewhere in the middle. You should get $\phi(x_0) = 1/\sqrt{(2+m^2)^2 - 4}$.
