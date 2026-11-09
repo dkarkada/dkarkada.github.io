@@ -1,0 +1,36 @@
+<script>
+// Display equations wider than the text column scroll sideways (with the scrollbar hidden).
+// Mark the edge(s) each one can still scroll toward with .fade-l / .fade-r, which global.css
+// turns into a soft fade, so a clipped equation reads as "scroll me" rather than "cut off".
+
+const SLACK = 1 // px of rounding tolerance
+
+function update(el: Element) {
+  const max = el.scrollWidth - el.clientWidth
+  const overflows = max > SLACK
+  el.classList.toggle('fade-l', overflows && el.scrollLeft > SLACK)
+  el.classList.toggle('fade-r', overflows && el.scrollLeft < max - SLACK)
+}
+
+function updateAll() {
+  document.querySelectorAll('.katex-display').forEach(update)
+}
+
+// Size changes cover window resizes, fonts loading, and collapsed sections being opened.
+const ro = new ResizeObserver(entries => entries.forEach(e => update(e.target)))
+
+function setup() {
+  ro.disconnect()
+  document.querySelectorAll('.katex-display').forEach(el => ro.observe(el))
+  updateAll()
+  document.fonts?.ready.then(updateAll)
+}
+
+document.addEventListener('scroll', (e) => {
+  if (e.target instanceof Element && e.target.classList.contains('katex-display')) {
+    update(e.target)
+  }
+}, { capture: true, passive: true })
+
+document.addEventListener('astro:page-load', setup)
+</script>

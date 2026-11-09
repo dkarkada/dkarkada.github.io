@@ -15,6 +15,7 @@ import { visit } from 'unist-util-visit'
 import { themeConfig } from './src/config'
 import { rehypeCodeCopyButton } from './src/plugins/rehype-code-copy-button.mjs'
 import { rehypeImgToFigure } from './src/plugins/rehype-img-to-figure.mjs'
+import { rehypeNowrapGlue } from './src/plugins/rehype-nowrap-glue.mjs'
 import { rehypeUnwrapImg } from './src/plugins/rehype-unwrap-img.mjs'
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.mjs'
 import { remarkCollapsibleHeadings } from './src/plugins/remark-collapsible-headings.mjs'
@@ -74,7 +75,19 @@ export default defineConfig({
       remarkSmartypantsNoQuotes,
     ],
     rehypePlugins: [
-      rehypeKatex,
+      [
+        rehypeKatex,
+        {
+          macros: {
+            // Norm bars that are at least \big tall but still grow with their contents.
+            '\\norm': '\\left\\lVert #1 \\vphantom{\\big(}\\right\\rVert',
+            // \left/\right without the thin spaces TeX puts around them (cf. LaTeX's mleftright).
+            '\\mleft': '\\mathopen{}\\left',
+            '\\mright': '\\right#1\\mathclose{}',
+          },
+        },
+      ],
+      rehypeNowrapGlue, // Must be after rehypeKatex
       rehypeSlug,
       rehypeCodeCopyButton,
       rehypeImgToFigure,

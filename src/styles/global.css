@@ -76,6 +76,22 @@ html.dark #grain-shimmer {
 .katex-display::-webkit-scrollbar {
   display: none;
 }
+/* Fade the edge(s) an overflowing equation can still scroll toward; classes are set by
+   Widgets/MathOverflow.astro. */
+.katex-display.fade-l,
+.katex-display.fade-r {
+  --fade-l: 0px;
+  --fade-r: 0px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+}
+.katex-display.fade-l { --fade-l: 2rem; }
+.katex-display.fade-r { --fade-r: 2rem; }
+
+/* Inline math / footnote markers glued to neighboring text (see rehype-nowrap-glue): no line
+   break at the seams, but the math itself may still break internally. */
+.nowrap-glue { white-space: nowrap; }
+.nowrap-glue > .katex { white-space: normal; }
 
 /* Highlight Hover Animation */
 .highlight-static,
