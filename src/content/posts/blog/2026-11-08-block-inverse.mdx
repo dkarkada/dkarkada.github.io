@@ -1,0 +1,302 @@
+---
+title: "Deriving the DMFT cavity equation using the matrix block inverse formula"
+published: 2026-11-08
+description: How to solve linear systems where one variable responds to constraints on the remaining.
+tags:
+  - science
+abbrlink: block-inv-dmft
+hidden: False
+---
+
+import cavityUrl from '../_media/sherman/cavity.js?url'
+import cavityDataUrl from '../_media/sherman/cavity.json?url'
+import cavitySystemDataUrl from '../_media/sherman/cavity-system.json?url'
+
+In many high-dimensional linear problems, I want to calculate how one variable (or coordinate) responds to constraints on the remaining. A classic example is the _disordered linear dynamical system_, where we have a large system of sites, arranged into a vector $h$, which undergo random but coupled dynamics. The goal is to find an equation to describe the dynamics of a single site, marginalizing out the effects of the other sites. This is a rich system; Blake gives a nice introduction in his [2026 review paper](https://arxiv.org/pdf/2601.01010) with Cengiz Pehlevan, and Mark wrote up a [detailed walkthrough of it on his blog](https://mrkdh16.github.io/markedown/A-Learning-Mechanic's-Toolkit/Deep-Dives/All-the-math-I-learned-from-DMFT).
+
+<figure class="cavity-figure">
+<div data-cavity-anim data-view="system" data-src={cavitySystemDataUrl}></div>
+<figcaption>
+
+The color of site $i$ represents its activity $h_i(t)$, the size of its halo is its external drive $j_i(t)$, and the edges are the couplings $A$. We want a self-contained equation for the dynamics of a single site (e.g., circled).
+
+</figcaption>
+</figure>
+
+Two other problems with similar structure:
+1. *High-dimensional linear regression.* We have a random function "vector" $y(x)$ whose expected covariance is known. We want to find an equation that predicts the distribution of a single element $y(x_0)$ conditioned on observations $\{y(x_i)\}_i$ at several other training points.
+2. *Gaussian free field.* We have a free field $\phi(x)$ with kinetic operator $L = -\nabla^2 + m^2$. We place a point source at the endpoint $x_0$ of a semi-infinite 1D lattice. What's $\phi(x_0)$?
+
+What all of these problems have in common is that they're linear problems that can be solved by the [matrix block inversion formula](https://en.wikipedia.org/wiki/Block_matrix#Inversion). I thought that this formula was pretty opaque, and I wanted to better understand where it comes from. The point of this blog post is to give a few different derivations of it, and then show how to use it to solve the disordered linear dynamical system. I'll leave the other two problems as exercises :--)
+
+## Why is this about block inversion?
+
+At the core of all these problems is the linear relation $j = Mh$, where the symmetric matrix $M$ is known, but $j$ and $h$ are both only partially-known to us, with some unknown components we need to solve for. For example, the linear dynamical system is governed by $\dot h = -Ah + j$, which can be written as $j = \left(A + \frac{d}{dt}\right)h$. We want to isolate the behavior of a single site (wlog, index 0), which we can depict as separated from the remaining "bath" variables:
+
+$$
+\begin{align*}
+\left[\begin{array}{c}
+  j_0 \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} j_b
+\end{array}\right]
+&=
+\left[\begin{array}{c:c}
+  A_{00} + \frac{d}{dt} & \qquad A_{b0}^\top \qquad \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} A_{b0} & \qquad A_{bb} + \frac{d}{dt} I \qquad
+\end{array}\right]
+\left[\begin{array}{c}
+  h_0 \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} h_b
+\end{array}\right] \\[4.5em]
+&=:
+\left[\begin{array}{c:c}
+  s & \qquad\;\; c^\top \qquad\;\; \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} c & \qquad\;\; B \qquad\;\;
+\end{array}\right]
+\left[\begin{array}{c}
+  h_0 \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} h_b
+\end{array}\right] .
+\end{align*}
+$$
+
+This site-bath structure makes the problem interesting -- in some sense it precludes naive spectral approaches, since the site basis is privileged. In the second line I've renamed the blocks for simplicity of notation: $s$ (for "site") is a scalar, $c$ (for "coupling") is a vector, and $B$ (for "bath") is a matrix.
+
+To solve for $h_0(t)$ without explicit reference to $h_b(t)$, we clearly need to invert $M:=A + \frac{d}{dt}$ in terms of the blocks $s$, $c$, and $B$. The formula is pretty complicated:
+
+$$
+\left[\begin{array}{c}
+  \rule[-1.3em]{0pt}{2.9em} h_0 \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} h_b
+\end{array}\right]
+=
+\left[\begin{array}{c:c}
+  \rule[-1.3em]{0pt}{2.9em} \dfrac{1}{s - c^\top B^{-1} c} & \quad -\dfrac{c^\top B^{-1}}{s - c^\top B^{-1} c} \quad \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} -\dfrac{B^{-1} c}{s - c^\top B^{-1} c} & \quad B^{-1} + \dfrac{B^{-1} c\, c^\top B^{-1}}{s - c^\top B^{-1} c} \quad
+\end{array}\right]
+\left[\begin{array}{c}
+  \rule[-1.3em]{0pt}{2.9em} j_0 \\[0.4em] \hdashline
+  \rule[-2em]{0pt}{4.5em} j_b
+\end{array}\right] .
+$$
+
+I think it's important to understand what's going on in this formula. I want to give a few different derivations, all of which give some physical intuition for this formula, and for the linear dynamical system. If you don't care about that, you can skip to the next section.
+
+### > Using Gaussian elimination
+
+This is the most straightforward method, but imo the least illuminating. We just write the two block rows of $j = Mh$:
+
+$$
+\begin{aligned}
+j_0 &= s\, h_0 + c^\top h_b \\
+j_b &= c\, h_0 + B\, h_b .
+\end{aligned}
+$$
+
+Solve for the bath site variables using the bath row equation: $h_b = B^{-1}\left(j_b - c\, h_0\right)$. Substitute this into the site row and collect $h_0$:
+
+$$
+\left(s - c^\top B^{-1} c\right) h_0 = j_0 - c^\top B^{-1} j_b .
+$$
+
+The quantity $\left(s - c^\top B^{-1} c\right)$ is called the [Schur complement](https://en.wikipedia.org/wiki/Schur_complement).
+Dividing it from both sides gives the top row of the block inverse, and plugging $h_0$ back into our equation for $h_b$ gives the bottom row.
+
+As we'll soon see, the Schur complement shows up a lot in these problems. Sadly, this derivation didn't give me much intuition for what it means, or why it has that functional form. Also, the Schur complement is dimensionful; we know from physics that oftentimes the key structural insight comes from trying to extract dimension-free quantities. The next method (using the Sherman-Morrison formula) does this directly.
+
+### > Using the Sherman-Morrison formula
+
+Notice that the site-bath coupling is the annoying part of the inverse. If we could just nix it, $c=0$, then we'd have
+
+$$
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1}
+=
+\begin{bmatrix} 1/s & 0 \\ 0 & B^{-1} \end{bmatrix}
+$$
+
+since that's how block-diagonal matrices work. This is intuitive -- the site and the bath don't talk, so their inverses are independent. Can we just sneak the coupling back in somehow? A useful starting observation is that the uncoupled interaction matrix is a low-rank perturbation of the full interaction matrix:
+
+$$
+M =
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}
++ e\,p^\top + p\, e^\top
+$$
+
+where $p^\top = \left[\,0 \;\; c^\top\,\right]$ contains the couplings, and $e = \left[1, 0, \dots, 0\right]^\top$ is the first canonical basis vector. The problem has now transformed: we want to invert a low-rank perturbation of a matrix whose inverse we already know. This is where the Sherman-Morrison formula comes in. First we factor out the uncoupled part:
+
+$$
+M^{-1} =
+\left( I + e\,q^\top + \tilde p\, e^\top\right)^{-1}
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1}
+$$
+
+where $\tilde p^\top := \left[\,0 \;\; \left(B^{-1}c\right)^\top\,\right]$ contains the coupling as seen through the _uncoupled_ inverse, and $q := p/s$. I'll leave it as an exercise to go through the same steps as in [my previous blog post](/posts/sherman-morrison/); as a hint, it's useful to observe that $e^\top e=1$ and $e^\top q = e^\top \tilde p = 0$. It's also useful to define $g:=q^\top \tilde p=\frac{1}{s}c^\top B^{-1} c$. If you do the calculation, you find that
+
+$$
+\begin{aligned}
+M^{-1}
+&= \left( I - \frac{1}{1-g} \left( e\,q^\top + \tilde p\, e^\top - \tilde p\,q^\top - g\, e\, e^\top \right) \right)
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1} \\[1.5em]
+&= \left( I - \frac{1}{1-g} \begin{bmatrix} -g & c^\top / s \\ B^{-1}c & -B^{-1}c\,c^\top / s \end{bmatrix} \right)
+\begin{bmatrix} s & 0 \\ 0 & B \end{bmatrix}^{-1} \\[1.5em]
+&= \begin{bmatrix}
+\dfrac{1}{s\left(1-g\right)} & \qquad -\dfrac{c^\top B^{-1}}{s\left(1-g\right)} \\[2em]
+-\dfrac{B^{-1}c}{s\left(1-g\right)} & \qquad B^{-1} + \dfrac{B^{-1}c\,c^\top B^{-1}}{s\left(1-g\right)}
+\end{bmatrix} .
+\end{aligned}
+$$
+
+Notice that our quantity $g=q^\top \tilde p$ has two nice properties: a) it shows up everywhere, and b) it's dimensionless! I think this is a strong signal that it's worth trying to interpret its meaning. We can get some intuition by relying on the visual derivation in [my previous blog post](/posts/sherman-morrison/). First, our quantity $\tilde p$ is exactly analogous to the $\tilde p$ from the blog post. It represents the coupling that remains after we factor out the _uncoupled_ inverse. Then, since $\tilde p e^\top$ skews the bath variables according to the first site's activity, and $e q^\top$ skews the site variable according to the bath's activity, the quantity $g=q^\top \tilde p$ is akin to a gain, or echo: it measures the strength of the round-trip effect of the site on itself _through the bath_.
+
+This interpretation of $g$ becomes a lot more explicit when we solve the inverse problem using an iterative method. That's what we'll do next.
+
+### > Using Gauss-Seidel iteration (alternating minimization)
+
+In non-convex optimization, alternating minimization is a powerful method. (An example from neuroscience is sparse coding w/ dictionary learning.) The idea is that even though the full problem is jointly non-convex, the sub-problems where we optimize only one variable while keeping the others fixed are often individually convex. So, we just alternate between minimizing each variable separately. Applying that idea to blockwise inversion is called Gauss-Seidel iteration: we solve the site row for $h_0$ holding the bath fixed, then solve the bath row for $h_b$ holding the site fixed, and repeat.
+
+$$
+\begin{aligned}
+h_0^{(k+1)} &= \frac{1}{s}\left(j_0 - c^\top h_b^{(k)}\right) \\[1em]
+h_b^{(k+1)} &= B^{-1}\left(j_b - c\, h_0^{(k+1)}\right) .
+\end{aligned}
+$$
+
+The uncoupled bath satisfies $h_b^{(0)} = B^{-1} j_b$. How does the site react? It responds to both its drive $j_0$ and the bath: $h_0^{(1)} = \frac{1}{s}\left(j_0 - c^\top B^{-1} j_b\right)$. Then the bath reacts to this, $h_b^{(1)} = B^{-1} j_b - B^{-1} c\, h_0^{(1)}$, and _that_ reaction comes back to the site as $h_0^{(2)} = \left(1 + g\right) h_0^{(1)}$, where $g=\frac{1}{s}c^\top B^{-1} c$ is the same dimensionless gain from the previous section. Each round trip through the bath multiplies the latest correction by $g$, so
+
+$$
+h_0^{(k)} = \left(1 + g + g^2 + \dots + g^{k-1}\right) h_0^{(1)}
+\;\longrightarrow\;
+\frac{h_0^{(1)}}{1-g} = \frac{j_0 - c^\top B^{-1} j_b}{s\left(1-g\right)} ,
+$$
+
+which is the top row of the block inverse again.
+Therefore $1/\left(1-g\right)= 1 + g + g^2 + g^3 + \dots$ is the cumulative effect of all the echoes, cycling through the site and the bath and back to the site again, multiple times.[^fn: Technically the iteration only converges when $\lvert g \rvert < 1$, but our solution is correct as long as $g \neq 1$. In the case $\lvert g \rvert > 1$, iteration is simply not the right approach.]
+
+## Returning to the linear dynamical system
+
+Our problem is $j(t) = \left(A + \frac{d}{dt}\right)h(t)$, where $h(t)$ contains the site activities, $j(t)$ contains the per-site external drive, and $A$ is the time-independent interaction matrix. The trouble here is the $d/dt$, which is a bit hard to handle. Things will get a lot easier if we Fourier transform, since this takes $d/dt$ to $i\omega$, i.e., just a scalar times the identity matrix:
+
+$$
+\begin{align*}
+\begin{bmatrix}
+  \tilde\jmath_0 \\
+  \tilde\jmath_b
+\end{bmatrix}
+&=
+\begin{bmatrix}
+  A_{00} + i\omega & A_{b0}^\top \\
+  A_{b0} & A_{bb} + i\omega I
+\end{bmatrix}
+\begin{bmatrix}
+  \tilde h_0 \\
+  \tilde h_b
+\end{bmatrix} \\[1.5em]
+&=:
+\begin{bmatrix}
+  s & c^\top \\
+  c & B
+\end{bmatrix}
+\begin{bmatrix}
+  \tilde h_0 \\
+  \tilde h_b
+\end{bmatrix} .
+\end{align*}
+$$
+
+Here I'm using tildes to denote Fourier-space variables, i.e., functions of $\omega$. We want to solve for the site activity $h_0(t)$ in terms of $j(t)$. To do this we can just invert (using the block inversion formula) and read off the top row:
+
+$$
+\tilde h_0 = \frac{1}{A_{00} + i\omega - \tilde r} \left( \tilde\jmath_0 - A_{b0}^\top \left(A_{bb}+i\omega I\right)^{-1}\, \tilde\jmath_b \right)
+$$
+
+where I've introduced $\tilde r := A_{b0}^\top \left(A_{bb}+i\omega I\right)^{-1} A_{b0}=c^\top B^{-1} c$. Our equation for $\tilde h_0$ is, in some sense, complete: it does not directly depend on the other site trajectories. But, the annoying thing about our equation is that it still depends on the drive's bath variables, as well as all the bath couplings. If the system has permutation symmetry -- there are no privileged sites -- then we should expect to be able to simplify this further, to somehow "average out" the aggregate effect of the bath. This requires studying the remaining bath terms.
+
+The first remaining bath term is $\tilde r$. A few notes:
+1. Since $\tilde r= sg$, where $g=\frac{1}{s}c^\top B^{-1} c$ is the same dimensionless gain from the previous section, you can think of it as a dimensionful gain factor.
+2. If $A$ is a symmetric random matrix with i.i.d. entries (zero mean and variance $1/N$ for $N$ sites), then $c$ is independent of $B^{-1}$, and in the large-bath limit the random quadratic form $\tilde r = c^\top B^{-1} c$ concentrates to its expectation:
+    $$
+    \tilde r = c^\top B^{-1} c \to \mathbb{E}_c\mleft[c^\top B^{-1} c\mright] = \mathrm{tr}\mleft[B^{-1}\mright],
+    $$
+    where $\mathrm{tr}$ is the normalized trace (i.e., trace divided by matrix dimension). This "deterministic equivalent" is therefore a consequence of self-averaging in the large bath limit.
+3. If the system is large enough that $A_{00} \ll \mathrm{tr}\mleft[B^{-1}\mright]$, then we can discard that particular coupling. Then the site 0 inverse matrix element converges to a deterministic quantity:
+    $$
+    \frac{1}{A_{00}+i\omega-\tilde r} \to \frac{1}{i\omega-\tilde r}.
+    $$
+    If the system also has permutation symmetry, then the full system acts the same as the bath by itself, and all the diagonal elements are equal to the normalized trace (which, recall, is just $\tilde r$):
+    $$
+    \frac{1}{i\omega-\tilde r} = \mathrm{tr}\mleft[(A+i\omega I)^{-1}\mright] = \mathrm{tr}\mleft[B^{-1}\mright] = \tilde r.
+    $$
+    This leave-one-out approximation gives a self-consistent equation for $\tilde r$, which we can just solve! This is what I meant earlier by "averaging out the aggregate effect of the bath." Under the (pretty reasonable) assumptions we made, we don't actually need to know any of the bath details to solve how the bath actually interacts with the site (through $\tilde r$).
+4. Finally, a note on nomenclature: in this particular problem, $\tilde r$ is often called the _memory kernel_ (it'll become clear why later).
+
+The second remaining bath term is $\tilde u := -A_{b0}^\top \left(A_{bb}+i\omega I\right)^{-1}\, \tilde\jmath_b=c^\top B^{-1} \tilde\jmath_b$. A few more notes:
+1. Consider the bath activities if we nixed the coupling, $c=0$, or equivalently just removed site zero entirely. I'll use $h_{b\setminus 0}$ to denote these counterfactual bath activities. In this scenario, we'd have $B^{-1} \tilde\jmath_b = \tilde h_{b\setminus 0}$. Then $\tilde u = -c^\top \tilde h_{b\setminus 0}$.
+2. If we assume again that $A$ has i.i.d. entries, then $c$ is independent of $h_{b\setminus 0}$, and in the large-bath limit $\tilde u$ converges to a Gaussian process (by central limit theorem). The autocovariance of the GP is just the autocovariance of $\tilde h_{b\setminus 0}$.
+3. If we assume self-consistency again (i.e., that the permutation symmetry + large bath implies that the full system acts the same as the bath by itself) then the autocovariance of $\tilde h_{b\setminus 0}$ is equal to the autocovariance of $\tilde h$ which is equal to the autocovariance of $\tilde h_0$.
+4. Finally, a note on nomenclature: in this particular problem, $\tilde u$ is often called the _noise term_ since it's a Gaussian process that does not directly respond to either $h_0$ or $j_0$.
+
+
+We've now killed all the bath variables (yay!). After rearranging, here's what's left:
+
+$$
+i\omega\, \tilde h_0 = \tilde\jmath_0 + \tilde u + \tilde r\, \tilde h_0 .
+$$
+
+Now we finally Fourier transform back, using the convolution theorem for the product $\tilde r \,\tilde h_0$:
+
+$$
+\frac{d}{dt} h_0(t) = j_0(t) + u(t) + \int_{-\infty}^{t} dt'\, r(t-t')\, h_0(t') .
+$$
+
+This is quite amazing: we have an ODE for a single site's dynamics that explicitly depends only on the site's own history (through the memory kernel $r$) and its own external drive $j_0$. The dependence on the bath is implicit; it lives in the autocovariance of the Gaussian process $u$, and in the functional form of $r$. We already obtained a self-consistent equation for $r$ earlier; I'll leave it to you to do the same for $u$. (You can find details in [Mark's blogpost](https://mrkdh16.github.io/markedown/A-Learning-Mechanic's-Toolkit/Deep-Dives/All-the-math-I-learned-from-DMFT) and [Blake's paper](https://arxiv.org/pdf/2601.01010).)
+
+<figure class="cavity-figure">
+<div data-cavity-anim data-src={cavityDataUrl}></div>
+<figcaption>
+
+**(Left.)** A system of interacting sites. Each site's color is its activity $h_i(t)$, and the size of its halo is its external drive $j_i(t)$. The cavity site is circled, and one of its neighbors has a dashed circle. **(Top Right.)** The cavity site's true trajectory (solid) is well predicted by the single-site equation we derived (dashed). The faint envelope shows the memory kernel $r$. **(Bottom right.)** The neighbor site's true trajectory (solid) stays close to the counterfactual sans-cavity-site field (dashed).
+
+</figcaption>
+</figure>
+<script type="module" src={cavityUrl}></script>
+
+To recap, the main cavity idea here is exact: it follows from the block-inverse formula, which is straight up correct. Then, to simplify _even more_, we make the following extra approximations:
+* _concentration_: with large bath, things self-average and many random variables converge to deterministic limits
+* _cavity (leave-one-out) approximation_: when we remove the site, nothing much changes in the bath (at least, as far as its correlations are concerned). This gives self-consistency: noise autocovariance and memory kernel are shared across all sites. This allows us to solve for them with no dependence on the bath's details.
+
+## Two exercises
+
+1. **Kernel regression.** We have a random function $y(x)$ with zero mean and known covariance $K(x, x')$, so its values at a test point and at a set of training points are jointly Gaussian:
+
+    $$
+    \left[\begin{array}{c}
+      y_\mathrm{test} \\[0.4em] \hdashline
+      \rule[-2em]{0pt}{4.5em} y_\mathrm{train}
+    \end{array}\right]
+    \sim
+    \mathcal{N}\left(0,\;
+    \left[\begin{array}{c:c}
+      K(x_\mathrm{test}, x_\mathrm{test}) & \qquad K(x_\mathrm{test}, x_\mathrm{train}) \qquad \\[0.4em] \hdashline
+      \rule[-2em]{0pt}{4.5em} K(x_\mathrm{train}, x_\mathrm{test}) & \qquad K(x_\mathrm{train}, x_\mathrm{train}) \qquad
+    \end{array}\right]
+    \right) .
+    $$
+
+    We observe the training labels $y_\mathrm{train}$. Conditioned on these, what's the mean and variance of $y_\mathrm{test}$? Hint: use the probability density function for high-dim Gaussians and isolate the part of the log density that depends on $y_\mathrm{test}$ (the rest can be absorbed into the normalizing constant). You should find that the mean is the kernel regression estimator and the variance is the Schur complement $s(1-g)$.
+
+2. **Gaussian free field.** We have $j = L\phi$, where $L$ is the discretized $-\nabla^2 + m^2$ on a semi-infinite 1D lattice with endpoint $x_0$: $L(x, x) = 2 + m^2$, $L(x, x \pm 1) = -1$, and zero otherwise. The source is $j(x_0)=1$ and zero otherwise. Solve for $\phi(x_0)$. Hint: solving for $r=sg$ will involve a self-consistency argument (note that the bath itself is self-similar to the site+bath system). Another hint: make sure the system is well-behaved in the large-mass limit.
+
+    In the end, you should get
+
+    $$
+    \begin{align*}
+    r &= \frac{1}{2 + m^2 - r}
+    \quad\implies\quad
+    r = \frac{\left(2 + m^2\right) - \sqrt{\left(2+m^2\right)^2 - 4}}{2} \\
+    \phi(x_0) &= \frac{1}{2 + m^2 - r} = r.
+    \end{align*}
+    $$
+
+    As an extra challenge, try to find the field $\phi$ everywhere.
+
+    As another extra challenge, try the full infinite chain, with $x_0$ somewhere in the middle. You should get $\phi(x_0) = 1/\sqrt{\left(2+m^2\right)^2 - 4}$.
