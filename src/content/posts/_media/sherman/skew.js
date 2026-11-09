@@ -1,18 +1,19 @@
-// Interactive 2D illustration of the rank-one skew v' = (I + p̃ qᵀ) v.
-// Drag the tips of p̃ and q to see how each
-// lattice point v is pushed along p̃ by an amount qᵀv.
+// Interactive 2D illustration of the rank-one skew v' = (I + p̃ qᵀ) v, drawn as a
+// flow map: arrows v → v'. The bases v sit on a grid aligned with q, in rows parallel
+// to the fixed line qᵀv = 0, so every arrow in a row is the same displacement (qᵀv) p̃.
+// Drag the tips of p̃ and q: the grid turns with q, the arrows point along p̃.
 //
 // Embed with: <div data-skew-widget></div> plus a module <script> pointing here.
 
-const RANGE = 3          // world coords span [-RANGE, RANGE] on both axes
-const LATTICE = 2        // lattice points span [-LATTICE, LATTICE]
-const STEP = 0.5         // lattice spacing
+const RANGE = 1.2        // world coords span [-RANGE, RANGE] on both axes
+const REACH = 8          // max |qᵀv|/|q| of a row; only matters when arrows are very long
+const STEP = 0.15        // spacing between rows (along q̂) and within a row (along q̂⊥)
 const HIT_PX = 22        // pointer radius for grabbing a handle
 const MAX_PX = 560       // max canvas width
 
 const STYLE = `
 .skew-widget { margin: 0 auto; max-width: ${MAX_PX}px; }
-.skew-widget canvas { width: 100%; aspect-ratio: 1; touch-action: none; cursor: default; }
+.skew-widget canvas { width: 100%; aspect-ratio: 1; cursor: default; }
 .skew-widget canvas.grab { cursor: grab; }
 .skew-widget canvas.grabbing { cursor: grabbing; }
 .skew-figure figcaption {
@@ -40,11 +41,11 @@ function setup(root) {
   root.dataset.skewReady = '1'
   root.classList.add('skew-widget')
 
-  const state = { p: [1.2, 0.4], q: [0.3, 0.5] }
+  const state = { p: [0.7, 0.25], q: [0.3, 0.5] }
 
   const canvas = document.createElement('canvas')
   canvas.setAttribute('role', 'img')
-  canvas.setAttribute('aria-label', 'Lattice points and their images under the skew I + p̃ qᵀ. Drag the tips of p̃ and q to change them.')
+  canvas.setAttribute('aria-label', 'Flow map of the skew I + p̃ qᵀ: arrows from points v to their images, in rows parallel to the line qᵀv = 0. Drag the tips of p̃ and q to change them.')
   root.append(canvas)
 
   let ctx, size = 0
@@ -116,22 +117,33 @@ function setup(root) {
     }
     ctx.globalAlpha = 1
 
-    // Lattice points v (hollow), their images v' (filled), and faint arrows v → v'.
-    const r = Math.max(2, size / 180)
-    for (let i = -LATTICE; i <= LATTICE + 1e-9; i += STEP) {
-      for (let j = -LATTICE; j <= LATTICE + 1e-9; j += STEP) {
-        const v = [i, j]
-        const s = q[0] * i + q[1] * j
-        const w = [i + s * p[0], j + s * p[1]]
-        arrow(v, w, fg, 1, 6, 0.28)
-        const [vx, vy] = toPx(v), [wx, wy] = toPx(w)
-        ctx.globalAlpha = 0.35
-        ctx.strokeStyle = fg
-        ctx.lineWidth = 1
-        ctx.beginPath(); ctx.arc(vx, vy, r, 0, 2 * Math.PI); ctx.stroke()
-        ctx.globalAlpha = 0.9
-        ctx.fillStyle = fg
-        ctx.beginPath(); ctx.arc(wx, wy, r, 0, 2 * Math.PI); ctx.fill()
+    // Flow map: arrows v → v' from a grid aligned with q, extending past the window.
+    // Row k sits at qᵀv = a·|q| with a = k·STEP, so every arrow in it is the same vector
+    // d = a|q| p̃; it spans q̂-offsets a → a(1 + qᵀp̃). Draw every arrow that can touch the
+    // window; the row on the fixed line gets dots.
+    const u = qn > 1e-9 ? [q[0] / qn, q[1] / qn] : [1, 0], n = [-u[1], u[0]]
+    const s = q[0] * p[0] + q[1] * p[1], pn = qn * (n[0] * p[0] + n[1] * p[1])
+    const Rc = RANGE * Math.SQRT2 + STEP
+    const r = Math.max(1.5, size / 260)
+    const K = Math.ceil(REACH / STEP)
+    for (let k = -K; k <= K; k++) {
+      const a = k * STEP
+      if (Math.min(a, a * (1 + s)) > Rc || Math.max(a, a * (1 + s)) < -Rc) continue
+      const d = [a * qn * p[0], a * qn * p[1]], dn = a * pn
+      const j0 = Math.floor((-Rc - Math.max(0, dn)) / STEP), j1 = Math.ceil((Rc - Math.min(0, dn)) / STEP)
+      const still = Math.hypot(d[0], d[1]) * size / (2 * RANGE) < 1.5
+      for (let j = j0; j <= j1; j++) {
+        const b = j * STEP
+        const v = [a * u[0] + b * n[0], a * u[1] + b * n[1]], w = [v[0] + d[0], v[1] + d[1]]
+        if (Math.min(v[0], w[0]) > RANGE || Math.max(v[0], w[0]) < -RANGE
+          || Math.min(v[1], w[1]) > RANGE || Math.max(v[1], w[1]) < -RANGE) continue
+        if (still) {
+          const [vx, vy] = toPx(v)
+          ctx.globalAlpha = 0.5
+          ctx.fillStyle = fg
+          ctx.beginPath(); ctx.arc(vx, vy, r, 0, 2 * Math.PI); ctx.fill()
+        }
+        else arrow(v, w, fg, 1.2, 7, 0.5)
       }
     }
     ctx.globalAlpha = 1
@@ -167,6 +179,12 @@ function setup(root) {
     }
     return { key: best, mx, my }
   }
+  // On touch screens, claim the gesture (no page scroll) only when it starts on a handle, so a
+  // swipe across the rest of the canvas still scrolls the page. Cancelling touchstart, unlike
+  // a CSS touch-action, can decide per touch.
+  canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1 && pick(e.touches[0]).key) e.preventDefault()
+  }, { passive: false })
   canvas.addEventListener('pointerdown', e => {
     const { key, mx, my } = pick(e)
     if (!key) return
@@ -181,7 +199,7 @@ function setup(root) {
     const { key, mx, my } = pick(e)
     if (!dragging) { canvas.classList.toggle('grab', !!key); return }
     const [x, y] = toWorld(mx + grabOffset[0], my + grabOffset[1])
-    const lim = RANGE - 0.2
+    const lim = RANGE - 0.08
     state[dragging] = [Math.max(-lim, Math.min(lim, x)), Math.max(-lim, Math.min(lim, y))]
     draw()
   })
