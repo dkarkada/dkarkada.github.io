@@ -33,7 +33,7 @@ function getPostPath(post: Post) {
     <li class:list={['post-item', { 'home-item': isHome }]}>
 
       {/* post title */}
-      <h3 class="post-title-wrapper">
+      <h3 class:list={['post-title-wrapper', { 'has-pin': pinned }]}>
 
         {/* pinned icon */}
         {pinned && (
@@ -112,6 +112,20 @@ function getPostPath(post: Post) {
 }
 @media (min-width: 1024px) {
   .pin-icon { width: 1.05em; transform: translateY(-0.15em); }
+}
+/* Mobile, where the title is its own block: hang the pin in the left padding, so a wrapped
+   title lines up under its first word rather than under the pin. Taking the icon out of flow
+   also drops the space after it, so the padding alone sets the first word's position (kept
+   where it was inline: icon + gap + space = 1.73em); top matches the old inline placement. */
+@media (max-width: 1023.98px) {
+  .post-title-wrapper.has-pin { display: block; position: relative; padding-left: 1.73em; }
+  .post-title-wrapper.has-pin .pin-icon {
+    position: absolute;
+    left: 0;
+    top: 0.31em;
+    margin-right: 0;
+    transform: none;
+  }
 }
 
 .post-link {

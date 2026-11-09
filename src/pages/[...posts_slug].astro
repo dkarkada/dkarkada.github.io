@@ -114,4 +114,8 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post)
   color: var(--color-primary);
   font-family: var(--font-time);
 }
+/* Phones: less dead space between the date and the first paragraph. */
+@media (max-width: 640px) {
+  .post-date { margin-bottom: 2.25rem; }
+}
 </style>

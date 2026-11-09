@@ -238,6 +238,10 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
   width: 100%;
   padding: 2.5rem min(7.25vw, 3.731rem);
 }
+/* Phones: slimmer side gutters, so the text column (and equations) get more width. */
+@media (max-width: 640px) {
+  .page-wrapper { padding-inline: 1rem; }
+}
 @media (min-width: 1024px) {
   .page-wrapper {
     margin-left: max(5.75rem, calc(50vw - 34.25rem));

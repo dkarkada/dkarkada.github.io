@@ -76,6 +76,11 @@ html.dark #grain-shimmer {
 .katex-display::-webkit-scrollbar {
   display: none;
 }
+/* Phones: display math at prose size, so fewer equations overflow the column. */
+@media (max-width: 640px) {
+  .heti .katex-display { font-size: var(--prose-size, 1rem); }
+  .katex-display .katex { font-size: 1.04em; }
+}
 /* Fade the edge(s) an overflowing equation can still scroll toward; classes are set by
    Widgets/MathOverflow.astro. */
 .katex-display.fade-l,
