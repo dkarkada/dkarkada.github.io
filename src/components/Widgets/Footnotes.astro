@@ -32,12 +32,28 @@ function closestFn(target: EventTarget | null, selector: string) {
   return target instanceof Element ? target.closest(selector) : null
 }
 
+function closeAll(except?: Element) {
+  document.querySelectorAll('.fn.open').forEach((fn) => {
+    if (fn === except) {
+      return
+    }
+    fn.classList.remove('open')
+    fn.querySelector('.fn-ref')?.setAttribute('aria-expanded', 'false')
+  })
+}
+
 document.addEventListener('click', (e) => {
   const ref = closestFn(e.target, '.fn-ref')
   const fn = ref?.parentElement
   if (!ref || !fn) {
+    // A tap outside any note closes the open ones (touch screens have no Escape key, and the
+    // marker itself is a small target to hit again).
+    if (!closestFn(e.target, '.fn-body')) {
+      closeAll()
+    }
     return
   }
+  closeAll(fn)
   const open = fn.classList.toggle('open')
   ref.setAttribute('aria-expanded', String(open))
   if (open) {
@@ -55,13 +71,9 @@ for (const type of ['mouseover', 'focusin']) {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') {
-    return
+  if (e.key === 'Escape') {
+    closeAll()
   }
-  document.querySelectorAll('.fn.open').forEach((fn) => {
-    fn.classList.remove('open')
-    fn.querySelector('.fn-ref')?.setAttribute('aria-expanded', 'false')
-  })
 })
 
 window.addEventListener('resize', () => {

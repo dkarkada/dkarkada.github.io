@@ -101,9 +101,11 @@
   border: 1px solid oklch(var(--color-secondary-params) / 0.25);
   border-radius: 6px;
   box-shadow: 0 4px 16px oklch(0% 0 0 / 0.12);
-  visibility: hidden;
+  /* display: none (not visibility: hidden) while closed: a hidden-but-laid-out note near the
+     right margin would still widen the page and let it scroll sideways on phones. */
+  display: none;
   opacity: 0;
-  transition: opacity 0.15s ease, visibility 0.15s ease;
+  transition: opacity 0.15s ease, display 0.15s ease allow-discrete;
 }
 /* Invisible bridge over the gap, so the pointer can move from the number into the note. */
 .heti .fn-body::before {
@@ -117,10 +119,15 @@
 .heti .fn.fn-above .fn-body { top: auto; bottom: calc(100% + 0.5em); }
 .heti .fn.fn-above .fn-body::before { top: auto; bottom: -0.6em; }
 @media (hover: hover) {
-  .heti .fn:hover .fn-body { visibility: visible; opacity: 1; }
+  .heti .fn:hover .fn-body { display: block; opacity: 1; }
+  @starting-style { .heti .fn:hover .fn-body { opacity: 0; } }
 }
 .heti .fn.open .fn-body,
-.heti .fn-ref:focus-visible + .fn-body { visibility: visible; opacity: 1; }
+.heti .fn-ref:focus-visible + .fn-body { display: block; opacity: 1; }
+@starting-style {
+  .heti .fn.open .fn-body,
+  .heti .fn-ref:focus-visible + .fn-body { opacity: 0; }
+}
 
 /* Paragraphs */
 .heti :where(p) {
