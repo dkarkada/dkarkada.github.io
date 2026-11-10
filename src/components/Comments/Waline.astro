@@ -90,7 +90,7 @@ document.addEventListener('astro:page-load', lazySetupWaline)
 }
 #waline .wl-panel {
   margin: 0;
-  border-color: oklch(var(--color-secondary-params) / 0.25);
+  border-color: oklch(var(--color-text-params) / 0.25);
   border-radius: 0.5rem;
   background-color: transparent;
 }
@@ -99,7 +99,7 @@ document.addEventListener('astro:page-load', lazySetupWaline)
 }
 #waline .wl-header-item {
   border-bottom-width: 1px;
-  border-bottom-color: oklch(var(--color-primary-params) / 0.25);
+  border-bottom-color: oklch(var(--color-emphasis-params) / 0.25);
   border-style: solid;
 }
 #waline .wl-header label {
@@ -120,7 +120,7 @@ document.addEventListener('astro:page-load', lazySetupWaline)
   min-height: 6rem;
 }
 #waline .wl-editor::placeholder {
-  color: oklch(var(--color-primary-params) / 0.25);
+  color: oklch(var(--color-emphasis-params) / 0.25);
 }
 #waline .wl-footer {
   margin: 0.5rem;
@@ -134,21 +134,21 @@ document.addEventListener('astro:page-load', lazySetupWaline)
 #waline .wl-emoji-popup {
   inset-inline-start: 0;
   max-width: 532px;
-  border-color: oklch(var(--color-secondary-params) / 0.25);
+  border-color: oklch(var(--color-text-params) / 0.25);
 }
 #waline .wl-emoji-popup .wl-tab-wrapper {
   scrollbar-width: thin;
 }
 #waline .wl-gif-popup {
-  border-color: oklch(var(--color-secondary-params) / 0.25);
+  border-color: oklch(var(--color-text-params) / 0.25);
 }
 #waline .wl-gif-popup input {
-  border-color: oklch(var(--color-secondary-params) / 0.25);
+  border-color: oklch(var(--color-text-params) / 0.25);
   background-color: var(--color-background);
 }
 #waline .wl-gif-popup input::placeholder {
   font-size: 0.875rem;
-  color: oklch(var(--color-secondary-params) / 0.3);
+  color: oklch(var(--color-text-params) / 0.3);
 }
 #waline .wl-gallery {
   scrollbar-width: none;
@@ -175,7 +175,7 @@ document.addEventListener('astro:page-load', lazySetupWaline)
   line-height: 1.5rem;
 }
 #waline .wl-time {
-  color: oklch(var(--color-primary-params) / 0.75);
+  color: oklch(var(--color-emphasis-params) / 0.75);
 }
 #waline .wl-edit,
 #waline .wl-delete {
@@ -189,20 +189,20 @@ document.addEventListener('astro:page-load', lazySetupWaline)
 <style>
 #waline {
   --waline-white: var(--color-background);
-  --waline-light-grey: oklch(var(--color-primary-params) / 0.25);
-  --waline-dark-grey: var(--color-secondary);
-  --waline-theme-color: var(--color-primary);
-  --waline-active-color: var(--color-primary);
-  --waline-color: var(--color-secondary);
+  --waline-light-grey: oklch(var(--color-emphasis-params) / 0.25);
+  --waline-dark-grey: var(--color-text);
+  --waline-theme-color: var(--color-emphasis);
+  --waline-active-color: var(--color-emphasis);
+  --waline-color: var(--color-text);
   --waline-bg-color: var(--color-background);
   --waline-bg-color-light: var(--color-background);
   --waline-bg-color-hover: var(--color-background);
-  --waline-border-color: oklch(var(--color-primary-params) / 0.25);
-  --waline-disable-bg-color: oklch(var(--color-secondary-params) / 0.05);
-  --waline-disable-color: var(--color-primary);
-  --waline-bq-color: oklch(var(--color-primary-params) / 0.25);
+  --waline-border-color: oklch(var(--color-emphasis-params) / 0.25);
+  --waline-disable-bg-color: oklch(var(--color-text-params) / 0.05);
+  --waline-disable-color: var(--color-emphasis);
+  --waline-bq-color: oklch(var(--color-emphasis-params) / 0.25);
   --waline-info-bg-color: var(--color-background);
-  --waline-info-color: oklch(var(--color-primary-params) / 0.25);
+  --waline-info-color: oklch(var(--color-emphasis-params) / 0.25);
   --waline-avatar-radius: 0.5rem;
 }
 </style>

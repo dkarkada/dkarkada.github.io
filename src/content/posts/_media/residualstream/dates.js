@@ -95,7 +95,7 @@ const STYLE = `
 figure.dates-figure { margin-top: 3rem; margin-bottom: 3rem; }
 .dates-figure figcaption {
   max-width: ${MAX_PX}px; margin: 0.4em auto 0;
-  font-size: 0.9rem; text-align: justify; color: oklch(var(--color-secondary-params) / 0.8);
+  font-size: 0.9rem; text-align: justify; color: oklch(var(--color-text-params) / 0.8);
 }
 .dates-figure figcaption p { font-size: inherit; margin: 0; }
 `
@@ -179,7 +179,7 @@ function setup(root, data) {
   let visible = false, last = null, raf = null
 
   function refreshColors() {
-    colors = { muted: cssVar('--color-secondary'), text: cssVar('--color-widget-text'), font: cssVar('--font-widget') || 'monospace' }
+    colors = { muted: cssVar('--color-text'), text: cssVar('--color-widget-text'), font: cssVar('--font-widget') || 'monospace' }
     palette = dateColors()
   }
 

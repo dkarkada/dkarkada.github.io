@@ -1,4 +1,5 @@
 ---
+import ReaderControls from '@/components/ReaderControls.astro'
 import { themeConfig } from '@/config'
 
 const { author } = themeConfig.site
@@ -22,6 +23,9 @@ const links = socialLinks.map(({ name, url, ...rest }) => {
     ))}
   </p>
   <p>© {currentYear} {author}</p>
+  <div class="footer-reader-controls">
+    <ReaderControls placement="footer" />
+  </div>
   <!-- <p>
     Powered by <a class="footer-link" href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a> and <a class="footer-link" href="https://github.com/radishzzz/astro-theme-retypeset" target="_blank" rel="noopener noreferrer">Retypeset</a>
   </p> -->
@@ -36,10 +40,20 @@ footer {
 @media (min-width: 1024px) {
   footer {
     position: fixed;
-    right: max(5rem, calc(50vw - 35rem));
-    width: 14rem;
+    right: var(--side-column-right);
+    width: var(--side-column-width);
     bottom: 5rem;
     font-size: 0.875rem;
+  }
+}
+.footer-reader-controls { margin-top: 0.75rem; }
+/* Desktop: the footer is fixed by its bottom edge, so hang the buttons just
+   below it rather than let them push the copyright up. */
+@media (min-width: 1024px) {
+  .footer-reader-controls {
+    position: absolute;
+    top: 100%;
+    margin-top: 0.6rem;
   }
 }
 
@@ -70,7 +84,7 @@ footer {
   .footer-link::after { transition-duration: 300ms; }
 }
 .footer-link:hover {
-  color: var(--color-primary);
+  color: var(--color-emphasis);
 }
 .footer-link:hover::after {
   transform-origin: bottom left;

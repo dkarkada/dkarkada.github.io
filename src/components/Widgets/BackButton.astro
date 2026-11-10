@@ -27,7 +27,7 @@ import GoBackIcon from '@/assets/icons/go-back.svg';
   font-size: 0.8rem;
   font-family: var(--font-navbar);
   font-style: italic;
-  color: oklch(var(--color-secondary-params) / 0.5);
+  color: oklch(var(--color-text-params) / 0.5);
 }
 @media (min-width: 1024px) {
   #back-home-mobile { display: none; }
@@ -38,14 +38,14 @@ import GoBackIcon from '@/assets/icons/go-back.svg';
     top: 0.95rem;
     aspect-ratio: 1 / 1;
     width: 1.125rem;
-    color: oklch(var(--color-secondary-params) / 0.4);
+    color: oklch(var(--color-text-params) / 0.4);
     transition-property: color;
     transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
     transition-duration: 150ms;
     cursor: pointer;
   }
   #back-button:hover {
-    color: oklch(var(--color-secondary-params) / 0.8);
+    color: oklch(var(--color-text-params) / 0.8);
   }
   #back-button:active {
     transform: scale(0.9) !important;

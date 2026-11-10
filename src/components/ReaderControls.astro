@@ -1,0 +1,94 @@
+---
+// Reader preferences: light/dark mode and a heavier prose weight.
+//
+// A click only stores the new preference and fires `theme-changed`;
+// Head.astro applies it to <html>. The labels are CSS-switched on those html
+// classes, so they are right on first paint and after every client-side
+// navigation without any script.
+//
+// Placement: the footer always renders one (`footer`), shown on desktop below
+// the copyright. Pages may render another near their top (`top`: the home page
+// under the anim square, posts under the date), which replaces the footer one
+// on mobile. The host positions the row; this component only decides which
+// instance is visible.
+interface Props {
+  placement: 'footer' | 'top'
+}
+const { placement } = Astro.props
+---
+
+<div class="reader-controls" data-placement={placement}>
+  <button type="button" class="reader-btn" data-pref="theme">
+    <span class="when-dark">Light mode</span><span class="when-light">Dark mode</span>
+  </button>
+  <button type="button" class="reader-btn" data-pref="font">
+    <span class="when-regular">Heavy font</span><span class="when-heavy">Regular font</span>
+  </button>
+</div>
+
+<script>
+// Bundled module script: runs once per full load, and the delegated listener
+// survives client-side navigations (the buttons are re-rendered each page).
+document.addEventListener('click', (e) => {
+  const pref = (e.target as Element | null)?.closest<HTMLElement>('.reader-btn')?.dataset.pref
+  if (!pref)
+    return
+  const html = document.documentElement.classList
+  const value = pref === 'theme'
+    ? (html.contains('dark') ? 'light' : 'dark')
+    : (html.contains('heavy-font') ? 'regular' : 'heavy')
+  try {
+    localStorage.setItem(pref, value)
+  }
+  catch {}
+  document.dispatchEvent(new Event('theme-changed'))
+})
+</script>
+
+<style>
+.reader-controls {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+}
+@media (min-width: 1024px) {
+  .reader-controls { font-size: 0.875rem; }
+  .reader-controls[data-placement='top'] { display: none; }
+}
+@media (max-width: 1023.98px) {
+  :global(body:has(.reader-controls[data-placement='top'])) .reader-controls[data-placement='footer'] { display: none; }
+}
+
+/* Same emboss as the widget buttons (theme.css, --widget-*) */
+.reader-btn {
+  font-family: var(--font-navbar);
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.2;
+  padding: 0.2em 0.7em;
+  border-radius: 0.45em;
+  /* dimmed like the post descriptions; only the label, not the emboss */
+  color: oklch(var(--color-text-params) / 0.6);
+  background: var(--color-background);
+  border: 1px solid;
+  border-color: var(--widget-rim-hi) var(--widget-rim-lo) var(--widget-rim-lo) var(--widget-rim-hi);
+  box-shadow: var(--widget-raise);
+  transition: color 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+.reader-btn:hover { color: var(--color-emphasis); }
+.reader-btn:active {
+  box-shadow: var(--widget-sink);
+  border-color: var(--widget-rim-lo) var(--widget-rim-hi) var(--widget-rim-hi) var(--widget-rim-lo);
+}
+.reader-btn:focus-visible {
+  outline: 1px solid oklch(var(--color-text-params) / 0.6);
+  outline-offset: 2px;
+}
+
+/* Labels follow the html classes */
+.when-light, .when-heavy { display: none; }
+:global(html:not(.dark)) .when-dark { display: none; }
+:global(html:not(.dark)) .when-light { display: inline; }
+:global(html.heavy-font) .when-regular { display: none; }
+:global(html.heavy-font) .when-heavy { display: inline; }
+</style>

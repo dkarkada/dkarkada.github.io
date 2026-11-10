@@ -1,6 +1,6 @@
 .animContainer {
   height: 224px;
-  width: 14rem;
+  width: var(--side-column-width);
 }
 
 @media (max-width: 1023px) {
@@ -15,7 +15,7 @@
   .animContainer {
     position: fixed;
     top: 5rem;
-    right: max(5rem, calc(50vw - 35rem));
+    right: var(--side-column-right);
   }
 }
 
@@ -56,7 +56,7 @@
     display: block;
     position: fixed;
     top: 5rem;
-    right: max(5rem, calc(50vw - 35rem));
-    width: 14rem;
+    right: var(--side-column-right);
+    width: var(--side-column-width);
   }
 }

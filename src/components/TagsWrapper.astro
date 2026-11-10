@@ -32,7 +32,7 @@ const { tags, currentTag = '' } = Astro.props;
   display: inline-block;
   border-width: 1px;
   border-style: solid;
-  border-color: oklch(var(--color-secondary-params) / 0.25);
+  border-color: oklch(var(--color-text-params) / 0.25);
   border-radius: 9999px;
   padding: 0.175rem 0.8rem;
   box-shadow: none;
@@ -42,10 +42,10 @@ const { tags, currentTag = '' } = Astro.props;
 }
 .tag-link:hover,
 .tag-link.tag-active {
-  border-color: oklch(var(--color-secondary-params) / 0.8);
-  color: var(--color-primary);
+  border-color: oklch(var(--color-text-params) / 0.8);
+  color: var(--color-emphasis);
   font-weight: 500;
-  box-shadow: 0 0 0 1px oklch(var(--color-secondary-params) / 0.8);
+  box-shadow: 0 0 0 1px oklch(var(--color-text-params) / 0.8);
 }
 
 /* Sizer trick: invisible bold text reserves space so layout doesn't shift on hover */

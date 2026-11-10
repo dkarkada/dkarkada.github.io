@@ -14,18 +14,10 @@ export const themeConfig: ThemeConfig = {
   // --- Colors ---
   color: {
     mode: 'dark', // light, dark, auto
-    light: {
-      primary: 'oklch(25% 0.005 298)',
-      secondary: 'oklch(40% 0.005 298)',
-      background: 'oklch(96% 0.005 298)',
-      highlight: 'oklch(0.93 0.195089 103.2532 / 0.5)',
-    },
-    dark: {
-      primary: 'oklch(0.86 0.03 64)',
-      secondary: 'oklch(0.74 0.04 64)',
-      background: 'oklch(0.172 0.024 280)',
-      highlight: 'oklch(0.28 0.05 275 / 1.0)',
-    },
+    // The palette lives in src/styles/theme.css. Only the page background is
+    // needed here, for the browser's theme-color meta; keep it in sync.
+    light: { background: 'oklch(0.88 0.03 85)' },
+    dark: { background: 'oklch(0.18 0.032 280)' },
   },
 
   // --- Global ---

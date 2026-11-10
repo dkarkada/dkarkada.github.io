@@ -18,7 +18,7 @@ const STYLE = `
 .skew-widget canvas.grabbing { cursor: grabbing; }
 .skew-figure figcaption {
   max-width: ${MAX_PX}px; margin: 0.4em auto 0;
-  font-size: 0.9rem; text-align: justify; color: oklch(var(--color-secondary-params) / 0.8);
+  font-size: 0.9rem; text-align: justify; color: oklch(var(--color-text-params) / 0.8);
 }
 .skew-figure figcaption p { font-size: inherit; margin: 0; }
 `
@@ -86,8 +86,8 @@ function setup(root) {
 
   function draw() {
     if (!ctx || !size) return
-    const fg = cssVar('--color-primary')
-    const muted = cssVar('--color-secondary')
+    const fg = cssVar('--color-emphasis')
+    const muted = cssVar('--color-text')
     const pColor = cssVar('--color-widget-accent')
     const qColor = cssVar('--color-caution')
     const [p, q] = [state.p, state.q]

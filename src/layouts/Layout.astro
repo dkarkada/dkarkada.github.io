@@ -50,7 +50,6 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
 >
   <Head {postTitle} {postDescription} {postSlug} />
   <body>
-    <div id="noise-overlay" transition:persist="noise-overlay"></div>
     <div id="grain-shimmer" transition:persist="grain-shimmer" aria-hidden="true"></div>
     <div class="page-wrapper">
       {showTOCSidebar
@@ -75,13 +74,15 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
 </html>
 
 <script>
-  // Dark-mode background grain. Twelve greyscale noise layers around a ring,
+  // Background grain, in both modes. Twelve greyscale noise layers around a ring,
   // scanned by a moving raised-cosine window: the layers within the window
   // composite as a running-normalised `over` stack, so the group is a convex
   // combination of mean-0.5 fields. Blended `overlay` once (see #grain-shimmer
   // in global.css), that leaves the ground's mean lightness untouched at every
-  // phase — only the fine grain morphs. Skips work in light mode; paints a
-  // single static frame under reduced motion.
+  // phase — only the fine grain morphs. On the light ground overlay works as
+  // screen/multiply about the parchment, equally mean-neutral. Its strength is
+  // the theme's --grain-contrast, per mode; the tile is rebuilt when the mode
+  // changes. Paints a single static frame under reduced motion.
   //
   // `color-interpolation-filters='sRGB'` below is load-bearing, not decoration.
   // The SVG default is linearRGB, so feTurbulence's mean-0.5 field would be
@@ -116,12 +117,16 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
   // ground it multiplies is now ~1.46× lighter, so matching the old visible
   // grain needs a *lower* slope. 1.2 puts the tile at sd ≈ 16.5, which after
   // the brighter ground reproduces the previous sd ≈ 23.6 at the pixel.
-  const SLOPE = 1.2
+  // Read from --grain-contrast (theme.css) so each mode can set its own.
+  const contrast = () => {
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grain-contrast'))
+    return Number.isFinite(v) ? v : 1.2
+  }
   const BLUR = 1.0       // feGaussianBlur stdDeviation, softens the hash
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
 
-  const noiseURI = () => {
-    const icpt = (0.5 - 0.5 * SLOPE).toFixed(4)
+  const noiseURI = (slope: number) => {
+    const icpt = (0.5 - 0.5 * slope).toFixed(4)
     const svg
       = "<svg xmlns='http://www.w3.org/2000/svg' width='" + TILE + "' height='" + TILE + "'>"
       + "<filter id='n' color-interpolation-filters='sRGB'>"
@@ -129,9 +134,9 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
       + "' numOctaves='" + OCTAVES + "' seed='7' stitchTiles='stitch'/>"
       + "<feColorMatrix type='saturate' values='0'/>"
       + "<feComponentTransfer>"
-      + "<feFuncR type='linear' slope='" + SLOPE + "' intercept='" + icpt + "'/>"
-      + "<feFuncG type='linear' slope='" + SLOPE + "' intercept='" + icpt + "'/>"
-      + "<feFuncB type='linear' slope='" + SLOPE + "' intercept='" + icpt + "'/>"
+      + "<feFuncR type='linear' slope='" + slope + "' intercept='" + icpt + "'/>"
+      + "<feFuncG type='linear' slope='" + slope + "' intercept='" + icpt + "'/>"
+      + "<feFuncB type='linear' slope='" + slope + "' intercept='" + icpt + "'/>"
       + "<feFuncA type='linear' slope='0' intercept='1'/>"
       + "</feComponentTransfer>"
       + "<feGaussianBlur stdDeviation='" + BLUR + "' edgeMode='wrap'/>"
@@ -165,10 +170,6 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
 
   function frame(now: number) {
     requestAnimationFrame(frame)
-    if (!document.documentElement.classList.contains('dark')) {
-      painted = false
-      return
-    }
     if (reduce) {
       if (!painted) {
         apply(0)
@@ -187,16 +188,18 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
   function setup() {
     const root = document.getElementById('grain-shimmer')
     if (!root) return
-    // The persisted layers record the breakpoint they were rasterised at. If
-    // the viewport has crossed it since (rotation, a resized window), drop
-    // them so the tile is rebuilt at the right frequency.
-    const bp = matchMedia(WIDE).matches ? 'wide' : 'narrow'
-    if (root.dataset.bp !== bp) {
+    // The persisted layers record the breakpoint and contrast they were
+    // rasterised at. If either has changed since (rotation, a resized window,
+    // a mode switch to a theme with another --grain-contrast), drop them so
+    // the tile is rebuilt.
+    const slope = contrast()
+    const tile = (matchMedia(WIDE).matches ? 'wide' : 'narrow') + ':' + slope
+    if (root.dataset.tile !== tile) {
       root.replaceChildren()
-      root.dataset.bp = bp
+      root.dataset.tile = tile
     }
     if (!root.querySelector('.grain-layer')) {
-      const bg = 'url("' + noiseURI() + '")'   // one tile, decoded once, shared by all
+      const bg = 'url("' + noiseURI(slope) + '")'   // one tile, decoded once, shared by all
       const size = TILE + 'px ' + TILE + 'px'
       const frag = document.createDocumentFragment()
       for (let i = 0; i < N; i++) {
@@ -225,6 +228,9 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
 
   setup()
   document.addEventListener('astro:page-load', setup)
+  // A mode switch may change --grain-contrast; setup() rebuilds the tile only
+  // if it did. (Head.astro's listener has already applied the new classes.)
+  document.addEventListener('theme-changed', setup)
 </script>
 
 <style>

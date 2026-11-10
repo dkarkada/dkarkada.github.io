@@ -1,5 +1,6 @@
 ---
 import PostList from '@/components/PostList.astro'
+import ReaderControls from '@/components/ReaderControls.astro'
 import { defaultLocale, moreLocales } from '@/config'
 import Layout from '@/layouts/Layout.astro'
 import { getPinnedPosts, getRegularPosts } from '@/utils/content'
@@ -33,6 +34,11 @@ const pinnedPosts = await getPinnedPosts(lang)
 const regularPosts = await getRegularPosts(lang)
 ---
 <Layout>
+  {/* mobile only: under the anim square, above the posts */}
+  <div class="home-reader-controls">
+    <ReaderControls placement="top" />
+  </div>
+
   {pinnedPosts.length > 0 && (
     <section class="section-wrapper">
       <div class="uno-decorative-line"></div>
@@ -48,4 +54,7 @@ const regularPosts = await getRegularPosts(lang)
 
 <style>
 .section-wrapper { margin-bottom: 1.875rem; }
+@media (max-width: 1023.98px) {
+  .home-reader-controls { margin-bottom: 1.875rem; }
+}
 </style>

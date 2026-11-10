@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content'
 import { getCollection, render } from 'astro:content'
 import Comments from '@/components/Comments/index.astro'
 import PostDate from '@/components/PostDate.astro'
+import ReaderControls from '@/components/ReaderControls.astro'
 import TagsWrapper from '@/components/TagsWrapper.astro'
 import BackButton from '@/components/Widgets/BackButton.astro'
 import { defaultLocale, moreLocales } from '@/config'
@@ -90,6 +91,11 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post)
       />
     </div>
 
+    {/* mobile only: under the date, above the body */}
+    <div class="post-reader-controls">
+      <ReaderControls placement="top" />
+    </div>
+
     <div id="gsap-post-content">
       <Content />
     </div>
@@ -111,11 +117,16 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post)
 .post-date {
   display: block;
   margin-bottom: 4.3rem;
-  color: var(--color-primary);
+  color: var(--color-emphasis);
   font-family: var(--font-time);
 }
-/* Phones: less dead space between the date and the first paragraph. */
+/* Mobile: the reader buttons sit close under the date and take over its
+   space above the body (less of it on phones). */
+@media (max-width: 1023.98px) {
+  .post-date { margin-bottom: 0.75rem; }
+  .post-reader-controls { margin-bottom: 4.3rem; }
+}
 @media (max-width: 640px) {
-  .post-date { margin-bottom: 2.25rem; }
+  .post-reader-controls { margin-bottom: 2.25rem; }
 }
 </style>

@@ -32,32 +32,21 @@ function getPostPath(post: Post) {
   {posts.map(post => (
     <li class:list={['post-item', { 'home-item': isHome }]}>
 
-      {/* post title */}
-      <h3 class:list={['post-title-wrapper', { 'has-pin': pinned }]}>
-
-        {/* pinned icon */}
-        {pinned && (
-          <PinIcon
-            aria-hidden="true"
-            class="pin-icon"
-            fill="currentColor"
-          />
-        )}
-
-        <a
-          class:list={['post-link', { 'home-link': isHome }]}
-          href={getPostPath(post)}
-          transition:name={`post-${post.data.abbrlink || post.id}${lang ? `-${lang}` : ''}`}
-          data-disable-theme-transition
-        >
-          {post.data.title}
-        </a>
+      {/* post title; the pin (if any) sits directly against the link, with no
+          whitespace between them, so its negative margin alone sets the offset.
+          The link's ::after stretches over the whole item (title, description,
+          date), so all three lines are one click target. */}
+      <h3 class="post-title-wrapper">
+        {pinned && <PinIcon aria-hidden="true" class="pin-icon" fill="currentColor" />}<a class:list={['post-link', { 'home-link': isHome }]} href={getPostPath(post)} transition:name={`post-${post.data.abbrlink || post.id}${lang ? `-${lang}` : ''}`} data-disable-theme-transition>{post.data.title}</a>
       </h3>
 
-      {/* mobile post time */}
+      {/* post description (home page) */}
+      {isHome && <p class="post-desc">{generateDescription(post, 'list')}</p>}
+
+      {/* post date and reading time */}
       {post.data.showdate && (
         <div
-          class="post-time-mobile"
+          class="post-time"
           transition:name={`time-${post.data.abbrlink || post.id}${lang ? `-${lang}` : ''}`}
           data-disable-theme-transition
         >
@@ -68,64 +57,43 @@ function getPostPath(post: Post) {
         </div>
       )}
 
-      {/* desktop post time */}
-      {post.data.showdate && (
-        <div class="post-time-desktop">
-          <PostDate
-            date={post.data.published}
-            minutes={post.remarkPluginFrontmatter.minutes}
-          />
-        </div>
-      )}
-
-      {/* desktop post description */}
-      {isHome && (
-        <div class="post-desc heti">
-          <p class="post-desc-text">{generateDescription(post, 'list')}</p>
-        </div>
-      )}
-
     </li>
   ))}
 </ul>
 
 <style>
-.post-item { margin-bottom: 1.375rem; }
+/* Each item is a single click target sized to its three lines: title,
+   description, then date and reading time. */
+.post-item {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 1.375rem;
+}
 @media (min-width: 1024px) {
   .post-item.home-item { margin-bottom: 2.5rem; }
 }
 
 .post-title-wrapper {
   display: inline;
-  transition-property: color;
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition: color 150ms cubic-bezier(0, 0, 0.2, 1);
 }
-.post-title-wrapper:hover { color: var(--color-primary); }
 
+/* Desktop only. The pin hangs in the left margin: a negative left margin
+   equal to its width plus the gap cancels its advance, so pinned titles start
+   on the same edge as every other title. */
 .pin-icon {
-  margin-right: 0.5em;
-  display: inline-block;
+  --pin-size: 1.05em;
+  --pin-gap: 0.5em;
+  display: none;
   aspect-ratio: 1 / 1;
-  width: 0.98em;
-  transform: translateY(-0.1em);
+  width: var(--pin-size);
+  margin-left: calc(-1 * (var(--pin-size) + var(--pin-gap)));
+  margin-right: var(--pin-gap);
+  transform: translateY(-0.15em);
 }
 @media (min-width: 1024px) {
-  .pin-icon { width: 1.05em; transform: translateY(-0.15em); }
-}
-/* Mobile, where the title is its own block: hang the pin in the left padding, so a wrapped
-   title lines up under its first word rather than under the pin. Taking the icon out of flow
-   also drops the space after it, so the padding alone sets the first word's position (kept
-   where it was inline: icon + gap + space = 1.73em); top matches the old inline placement. */
-@media (max-width: 1023.98px) {
-  .post-title-wrapper.has-pin { display: block; position: relative; padding-left: 1.73em; }
-  .post-title-wrapper.has-pin .pin-icon {
-    position: absolute;
-    left: 0;
-    top: 0.31em;
-    margin-right: 0;
-    transform: none;
-  }
+  .pin-icon { display: inline-block; }
 }
 
 .post-link {
@@ -137,36 +105,46 @@ function getPostPath(post: Post) {
 @media (min-width: 1024px) {
   .post-link.home-link { font-weight: 500; font-size: 1.125rem; }
 }
-
-.post-time-mobile {
-  padding-top: 0.2rem;
-  padding-bottom: 0.2rem;
-  font-size: 0.875rem;
-  font-family: var(--font-time);
+.post-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
 }
-.home-item .post-time-mobile { font-size: 0.8rem; }
-@media (min-width: 1024px) {
-  .post-time-mobile { display: none; }
-}
-
-.post-time-desktop {
-  display: none;
-  font-size: 1rem;
-  font-family: var(--font-time);
-}
-@media (min-width: 1024px) {
-  .post-time-desktop { display: inline; margin-left: 0.625rem; }
+.post-link:focus-visible { outline: none; }
+.post-link:focus-visible::after {
+  outline: 1px solid oklch(var(--color-text-params) / 0.5);
+  outline-offset: 0.35rem;
+  border-radius: 0.25rem;
 }
 
-.post-desc { display: none; }
-@media (min-width: 1024px) {
-  .post-desc { display: block; }
-}
-
-.post-desc-text {
-  font-size: 1rem !important;
-  line-height: 1.25rem !important;
+/* Description and date share one look: Spectral 400 italic at 60% ink. The
+   weight is fixed, independent of the reader's Heavy/Regular choice (and
+   Spectral, since EB Garamond, the theme's time font, reads much lighter).
+   Their opacity makes them stacking contexts that paint over the link's
+   stretched ::after (which can't be raised: the link's view-transition-name
+   confines its z-index), so clicks fall through them to the link. */
+.post-desc,
+.post-time {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  line-height: 1.2rem;
   font-style: italic;
+  font-weight: 400;
+  text-wrap: pretty;
   opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 150ms cubic-bezier(0, 0, 0.2, 1);
 }
+@media (min-width: 1024px) {
+  .post-desc,
+  .post-time {
+    font-size: 1rem;
+    line-height: 1.25rem;
+  }
+}
+.post-time { margin-top: 0.1rem; }
+
+/* Hover (or keyboard focus): brighten all three lines together */
+.post-item:is(:hover, :focus-within) .post-title-wrapper { color: var(--color-emphasis); }
+.post-item:is(:hover, :focus-within) :is(.post-desc, .post-time) { opacity: 0.85; }
 </style>

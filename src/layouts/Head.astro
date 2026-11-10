@@ -79,7 +79,11 @@ const pageImage = postSlug
 <!-- Global View Transition -->
 <ClientRouter fallback="none" />
 
-<!-- Theme Toggle -->
+<!-- Theme and reader preferences. ReaderControls.astro (and the OS listener
+     below) store them in localStorage ('theme': 'light' | 'dark', 'font':
+     'heavy' | 'regular') and fire `theme-changed`; this script is the one place
+     that applies them to <html>: before first paint, before each client-side
+     swap, and on every `theme-changed`. -->
 <script
   is:inline
   define:vars={{
@@ -114,6 +118,16 @@ function initTheme(doc = document) {
   metaTheme?.setAttribute('content', isDark ? darkMode : lightMode)
 }
 
+// Font weight preference ("Heavy font" reader button)
+function initFontPref(doc = document) {
+  let heavy = false
+  try {
+    heavy = localStorage.getItem('font') === 'heavy'
+  }
+  catch {}
+  doc.documentElement.classList.toggle('heavy-font', heavy)
+}
+
 // Check and init motion preference
 function initMotionPref(doc = document) {
   // Priority: Site config > System motion preference > View Transition support
@@ -126,20 +140,28 @@ function initMotionPref(doc = document) {
 
 // 1. Initialize theme on first load
 initTheme()
+initFontPref()
 initMotionPref()
 
 // 2. Update theme before page transition to prevent flashing
 document.addEventListener('astro:before-swap', ({ newDocument }) => {
   initTheme(newDocument)
+  initFontPref(newDocument)
   initMotionPref(newDocument)
 })
 
-// 3. Listen to system theme changes in real-time
+// 3. Re-apply when a stored preference changes. Registered before any other
+// `theme-changed` listener (Giscus, the grain), so they see the new classes.
+document.addEventListener('theme-changed', () => {
+  initTheme()
+  initFontPref()
+})
+
+// 4. Follow system theme changes in real time
 window
   .matchMedia('(prefers-color-scheme: dark)')
   .addEventListener('change', ({ matches: isDark }) => {
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
-    initTheme()
     document.dispatchEvent(new Event('theme-changed'))
   })
 </script>

@@ -48,7 +48,7 @@ const STYLE = `
 .cavity-anim canvas { width: 100%; display: block; }
 .cavity-figure figcaption {
   max-width: ${MAX_PX}px; margin: 0.4em auto 0;
-  font-size: 0.9rem; text-align: justify; color: oklch(var(--color-secondary-params) / 0.8);
+  font-size: 0.9rem; text-align: justify; color: oklch(var(--color-text-params) / 0.8);
 }
 .cavity-figure figcaption p { font-size: inherit; margin: 0; }
 `
@@ -433,8 +433,8 @@ function setup(root, data) {
   function draw() {
     if (!ctx || !W) return
     const colors = {
-      fg: cssVar('--color-primary'),
-      muted: cssVar('--color-secondary'),
+      fg: cssVar('--color-emphasis'),
+      muted: cssVar('--color-text'),
       text: cssVar('--color-widget-text'),
       pal: PALETTE[document.documentElement.classList.contains('dark') ? 'dark' : 'light'],
       accent: cssVar('--color-important'),

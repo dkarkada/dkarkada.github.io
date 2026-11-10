@@ -51,37 +51,48 @@ img, video { max-width: 100%; height: auto; }
 [hidden] { display: none; }
 
 /* ===== Theme Variables ===== */
+/* Light mode on :root; html.dark (the default, see Head.astro) overrides only
+   what differs. Colors are OKLCH. Each palette color has a `-params` form
+   (bare "L C H") for opacity variants: oklch(var(--color-X-params) / alpha).
+   Reader preferences (ReaderControls.astro) are html classes: `dark` and
+   `heavy-font`. */
 :root {
-  /* Channel params for opacity variants: oklch(var(--color-X-params) / alpha) */
-  --color-primary-params: 25% 0.005 298;
-  --color-secondary-params: 40% 0.005 298;
-  --color-background-params: 96% 0.005 298;
-  /* Full color values */
-  --color-primary: oklch(var(--color-primary-params));
-  --color-secondary: oklch(var(--color-secondary-params));
+  /* Parchment ground, deep-blue ink */
+  --color-background-params: 0.88 0.03 85;
+  --color-text-params: 0.28 0.1 275;       /* default text: prose, captions, nav, TOC, rules */
+  --color-emphasis-params: 0.3 0.02 275;   /* active / hovered UI, footnote popups */
+  --color-heading-params: 0.2 0.035 272;   /* post titles and section headings */
+  --color-link-params: 0.33 0.07 262;      /* in-post links */
   --color-background: oklch(var(--color-background-params));
-  --color-highlight: oklch(0.93 0.195089 103.2532 / 0.5);
-  /* Post titles + section headers, and in-post links */
-  --color-heading-params: var(--color-primary-params);
-  --color-link-params: var(--color-primary-params);
+  --color-text: oklch(var(--color-text-params));
+  --color-emphasis: oklch(var(--color-emphasis-params));
   --color-heading: oklch(var(--color-heading-params));
   --color-link: oklch(var(--color-link-params));
-  --color-link-line: oklch(var(--color-secondary-params) / 0.8);
+  --color-link-underline: oklch(var(--color-link-params) / 0.55);
+  /* Marker band behind active / hovered nav links, text selection, active TOC */
+  --color-highlight: oklch(0.8 0.05 85);
+  /* Post prose weight (Spectral); html.heavy-font raises it */
+  --prose-weight: 300;
+  /* Contrast of the moving background grain (Layout.astro): slope of the noise
+     tile about its 0.5 midpoint; 0 turns it off. May differ per mode. */
+  --grain-contrast: 1.2;
   /* Widgets: one accent, rgb(103, 133, 171), shared by every widget; widget
      text (labels, controls, tooltips) is a paler tint of the same hue */
   --color-widget-accent-params: 0.609 0.068 254.6;
   --color-widget-text-params: 0.45 0.03 255;
   --color-widget-accent: oklch(var(--color-widget-accent-params));
   --color-widget-text: oklch(var(--color-widget-text-params));
-  /* Widget controls: soft emboss, lit from the top left. Raised controls take
-     --widget-raise plus a rim border (--widget-rim-hi top/left, --widget-rim-lo
-     bottom/right); pressed ones take --widget-sink with the rim swapped */
-  --widget-raise: -1px -1px 2px oklch(1 0 0 / 0.06), 2px 2px 4px oklch(0 0 0 / 0.5);
-  --widget-sink: inset 1px 1px 3px oklch(0 0 0 / 0.55), inset -1px -1px 2px oklch(1 0 0 / 0.05);
-  --widget-rim-hi: oklch(1 0 0 / 0.13);
-  --widget-rim-lo: oklch(0 0 0 / 0.4);
-  --widget-knob-rim: inset 1px 1px 0 oklch(1 0 0 / 0.16), inset -1px -1px 0 oklch(0 0 0 / 0.35);
-  --widget-groove: inset 1px 1px 2px oklch(0 0 0 / 0.6), 0 1px 0 oklch(1 0 0 / 0.08);
+  /* Embossed controls (widget buttons and sliders, reader buttons), lit from
+     the top left. Raised: --widget-raise plus a rim border (--widget-rim-hi
+     top/left, --widget-rim-lo bottom/right). Pressed: --widget-sink with the
+     rim swapped. Slider tracks: --widget-groove; knobs add --widget-knob-rim.
+     Light values shade with a warm brown instead of black. */
+  --widget-raise: -1px -1px 2px oklch(1 0 0 / 0.55), 1px 1px 3px oklch(0.3 0.04 85 / 0.28);
+  --widget-sink: inset 1px 1px 2px oklch(0.3 0.04 85 / 0.28), inset -1px -1px 1px oklch(1 0 0 / 0.5);
+  --widget-rim-hi: oklch(1 0 0 / 0.5);
+  --widget-rim-lo: oklch(0.3 0.04 85 / 0.2);
+  --widget-knob-rim: inset 1px 1px 0 oklch(1 0 0 / 0.5), inset -1px -1px 0 oklch(0.3 0.04 85 / 0.25);
+  --widget-groove: inset 1px 1px 2px oklch(0.3 0.04 85 / 0.4), 0 1px 0 oklch(1 0 0 / 0.45);
   /* Admonition colors */
   --color-note: oklch(48.8% 0.243 264.376 / 0.8);
   --color-tip: oklch(50.8% 0.118 165.612 / 0.8);
@@ -95,27 +106,39 @@ img, video { max-width: 100%; height: auto; }
   --font-serif: Spectral, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-sans: Lato, ui-sans-serif;
   --font-widget: CommitMono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Desktop side column: the fixed right-hand column holding the anim square
+     or TOC at the top and the nav and footer at the bottom. Inset from the
+     viewport's right edge, growing on wide screens so it stays beside the
+     centered text column. */
+  --side-column-right: max(5rem, calc(50vw - 35rem));
+  --side-column-width: 14rem;
 }
 html.dark {
-  --color-primary-params: 0.9 0.03 100;
-  --color-secondary-params: 0.77 0.032 100;
-  /* The ground as it actually renders: the grain overlay is now mean-neutral
-     (see Layout.astro), so this value is what you see. Picked to match the
-     old composited appearance — the pre-fix grain multiplied the ground by
-     ~1.456, taking oklch(0.172 0.024 280) to rgb(20,21,38). */
-  --color-background-params: 0.205 0.033 280;
-  --color-highlight: oklch(0.28 0.05 275);
-  /* Apricot white headers (lighter, paler, slightly warmer than the text);
-     streetlamp-amber links */
-  --color-heading-params: 0.92 0.014 65;
-  --color-link-params: 0.86 0.03 100; /* 0.85 0.07 78; */
-  --color-link-line: oklch(var(--color-link-params) / 0.45);
+  /* Night-blue ground (rendered as-is: the grain is mean-neutral), warm
+     parchment-white text, apricot-white headings, pale amber links */
+  --color-background-params: 0.18 0.032 280;
+  --color-text-params: 0.85 0.024 75;
+  --color-emphasis-params: 0.92 0.01 88;
+  --color-heading-params: 0.95 0.014 65;
+  --color-link-params: 0.91 0.03 100;
+  --color-link-underline: oklch(var(--color-link-params) / 0.45);
+  --color-highlight: oklch(0.25 0.05 275);
   --color-widget-text-params: 0.8 0.03 255;
+  --widget-raise: -1px -1px 2px oklch(1 0 0 / 0.06), 2px 2px 4px oklch(0 0 0 / 0.5);
+  --widget-sink: inset 1px 1px 3px oklch(0 0 0 / 0.55), inset -1px -1px 2px oklch(1 0 0 / 0.05);
+  --widget-rim-hi: oklch(1 0 0 / 0.13);
+  --widget-rim-lo: oklch(0 0 0 / 0.4);
+  --widget-knob-rim: inset 1px 1px 0 oklch(1 0 0 / 0.16), inset -1px -1px 0 oklch(0 0 0 / 0.35);
+  --widget-groove: inset 1px 1px 2px oklch(0 0 0 / 0.6), 0 1px 0 oklch(1 0 0 / 0.08);
   --color-note: oklch(70.7% 0.165 254.624 / 0.8);
   --color-tip: oklch(76.5% 0.177 163.223 / 0.8);
   --color-important: oklch(71.4% 0.203 305.504 / 0.8);
   --color-warning: oklch(82.8% 0.189 84.429 / 0.8);
   --color-caution: oklch(70.4% 0.191 22.216 / 0.8);
+}
+/* Reader preference, in either mode */
+html.heavy-font {
+  --prose-weight: 400;
 }
 
 /* ===== Global Utility Classes ===== */
@@ -129,16 +152,11 @@ html.dark {
 .hidden { display: none; }
 
 /* ===== Custom Shortcuts from uno.config.ts ===== */
-.uno-desktop-column {
-  position: fixed;
-  right: max(5rem, calc(50vw - 35rem));
-  width: 14rem;
-}
 .uno-decorative-line {
   margin-bottom: 1.125rem;
   height: 1px;
   width: 2.5rem;
-  background-color: oklch(var(--color-secondary-params) / 0.25);
+  background-color: oklch(var(--color-text-params) / 0.25);
 }
 @media (min-width: 1024px) {
   .uno-decorative-line {
@@ -149,6 +167,6 @@ html.dark {
 .uno-round-border {
   border-width: 1px;
   border-style: solid;
-  border-color: oklch(var(--color-secondary-params) / 0.05);
+  border-color: oklch(var(--color-text-params) / 0.05);
   border-radius: 0.25rem;
 }

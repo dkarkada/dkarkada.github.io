@@ -1,10 +1,10 @@
 html {
   background-color: var(--color-background);
-  color: var(--color-secondary);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scrollbar-width: thin;
-  scrollbar-color: oklch(var(--color-secondary-params) / 0.25) transparent;
+  scrollbar-color: oklch(var(--color-text-params) / 0.25) transparent;
   scrollbar-gutter: stable;
 }
 
@@ -17,37 +17,20 @@ body::selection {
   background-color: var(--color-highlight);
 }
 
-/* Fixed full-viewport texture layers, behind all content. */
-#noise-overlay,
+/* Grain: a fixed full-viewport layer behind all content, in both modes.
+   12 layers share one greyscale fractalNoise tile at different offsets,
+   which the script in Layout.astro scans with a moving window. The active
+   layers are averaged into one mean-0.5 field and blended `overlay` once, so
+   the shimmer never shifts the ground's mean color on either ground: on the
+   dark ground it brightens and darkens the night blue, on the light ground
+   the parchment. Strength: --grain-contrast (theme.css). */
 #grain-shimmer {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-}
-
-/* Grain.
-   Light mode: the original tiled PNG on #noise-overlay.
-   Dark mode: #grain-shimmer — 12 layers sharing one greyscale fractalNoise
-   tile at different offsets, which the script in Layout.astro scans with a
-   moving window. The active layers are averaged into one mean-0.5 field and
-   blended `overlay` once, so the shimmer never shifts the ground's mean
-   lightness. */
-#noise-overlay {
-  background-image: url('../assets/img/noiseTextureBlue.png');
-  background-repeat: repeat;
-}
-html.dark #noise-overlay {
-  display: none;
-}
-
-#grain-shimmer {
-  display: none;
   isolation: isolate;
   mix-blend-mode: overlay;
-}
-html.dark #grain-shimmer {
-  display: block;
 }
 #grain-shimmer .grain-layer {
   position: absolute;
@@ -172,10 +155,10 @@ h4:hover .heading-anchor-link svg:hover {
   cursor: pointer;
   border-width: 1px;
   border-style: solid;
-  border-color: oklch(var(--color-secondary-params) / 0.15);
+  border-color: oklch(var(--color-text-params) / 0.15);
   border-radius: 0.25rem;
   background-color: var(--color-background);
-  color: oklch(var(--color-secondary-params) / 0.8);
+  color: oklch(var(--color-text-params) / 0.8);
   opacity: 0;
   transition: opacity 300ms ease-out, background-color 150ms ease-out, transform 50ms ease-out;
 }
@@ -183,8 +166,8 @@ h4:hover .heading-anchor-link svg:hover {
   transform: scale(0.9);
 }
 .code-copy-button:hover {
-  border-color: oklch(var(--color-primary-params) / 0.15);
-  color: oklch(var(--color-primary-params) / 0.8);
+  border-color: oklch(var(--color-emphasis-params) / 0.15);
+  color: oklch(var(--color-emphasis-params) / 0.8);
 }
 .code-block-wrapper:hover .code-copy-button {
   opacity: 1;
