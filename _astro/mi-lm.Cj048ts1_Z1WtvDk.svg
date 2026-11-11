@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1260"
+   height="685"
+   viewBox="0 0 1260 685"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (1:1.4.4+202605061435+dcaf3e7d9e)"
+   sodipodi:docname="mi-lm.svg"
+   inkscape:export-filename="mi-lm.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#161438"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="false"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:zoom="1.0322727"
+     inkscape:cx="663.58434"
+     inkscape:cy="286.74593"
+     inkscape:window-width="2259"
+     inkscape:window-height="1202"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="marker18"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path18" />
+    </marker>
+    <marker
+       id="arrowhead"
+       viewBox="0 0 10 10"
+       refX="4"
+       refY="5"
+       markerWidth="5"
+       markerHeight="5"
+       markerUnits="strokeWidth"
+       orient="auto">
+      <path
+         d="M 0,0 L 10,5 L 0,10 z"
+         style="fill:#000000;stroke:none"
+         id="path1" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;fill:#000000">
+    <!-- nodes -->
+    <!-- arrows -->
+    <!-- field brackets -->
+    <g
+       id="statistics"
+       style="text-anchor:middle;fill:#c7c3c0;fill-opacity:1"
+       transform="translate(-16.468517,-38.749452)">
+      <text
+         x="231"
+         y="242"
+         style="font-weight:bold;font-size:42px;fill:#c7c3c0;fill-opacity:1"
+         id="text1">statistics</text>
+      <text
+         x="231"
+         y="279"
+         style="font-size:34px;fill:#c7c3c0;fill-opacity:1"
+         id="text2">of data and task</text>
+    </g>
+    <g
+       id="geometry"
+       style="text-anchor:middle;fill:#c7c3c0;fill-opacity:1"
+       transform="translate(-16.468517,-38.749452)">
+      <text
+         x="644"
+         y="138"
+         style="font-weight:bold;font-size:42px;fill:#c7c3c0;fill-opacity:1"
+         id="text3">geometry</text>
+      <text
+         x="644"
+         y="175"
+         style="font-size:34px;fill:#c7c3c0;fill-opacity:1"
+         id="text4">of representations</text>
+    </g>
+    <g
+       id="mechanisms"
+       style="text-anchor:middle;fill:#c7c3c0;fill-opacity:1"
+       transform="translate(-16.468517,-38.749452)">
+      <text
+         x="644"
+         y="345"
+         style="font-weight:bold;font-size:42px;fill:#c7c3c0;fill-opacity:1"
+         id="text5">mechanisms</text>
+      <text
+         x="644"
+         y="384"
+         style="font-size:34px;fill:#c7c3c0;fill-opacity:1"
+         id="text6">of computational circuits</text>
+    </g>
+    <g
+       id="behavior"
+       style="text-anchor:middle;fill:#c7c3c0;fill-opacity:1"
+       transform="translate(-16.468517,-38.749452)">
+      <text
+         x="1059"
+         y="242"
+         style="font-weight:bold;font-size:42px;fill:#c7c3c0;fill-opacity:1"
+         id="text7">behavior</text>
+      <text
+         x="1059"
+         y="279"
+         style="font-size:34px;fill:#c7c3c0;fill-opacity:1"
+         id="text8">at inference time</text>
+    </g>
+    <path
+       d="m 363.53148,201.25055 100,-65"
+       id="path8"
+       style="fill:none;fill-opacity:1;stroke:#c7c3c0;stroke-width:3.5;stroke-linecap:square;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker18)" />
+    <path
+       d="m 363.53148,211.25055 90,68"
+       id="path9"
+       style="fill:none;fill-opacity:1;stroke:#c7c3c0;stroke-width:3.5;stroke-linecap:round;stroke-opacity:1;marker-end:url(#marker18)" />
+    <path
+       d="m 791.53148,133.25055 99.75782,62.85161"
+       id="path10"
+       sodipodi:nodetypes="cc"
+       style="fill:none;fill-opacity:1;stroke:#c7c3c0;stroke-width:3.5;stroke-linecap:round;stroke-opacity:1;marker-end:url(#marker18)" />
+    <path
+       d="m 791.53148,274.25055 99.93747,-55.3439"
+       id="path11"
+       sodipodi:nodetypes="cc"
+       style="fill:none;fill-opacity:1;stroke:#c7c3c0;stroke-width:3.5;stroke-linecap:round;stroke-opacity:1;marker-end:url(#marker18)" />
+    <g
+       style="text-anchor:middle;fill:#c7c3c0;fill-opacity:1"
+       id="g12"
+       transform="translate(-16.468517,-38.749452)">
+      <text
+         x="346"
+         y="603"
+         style="font-weight:bold;font-size:33px;fill:#c7c3c0;fill-opacity:1"
+         id="text11">learning mechanics</text>
+      <text
+         x="346"
+         y="633"
+         style="font-size:24px;fill:#c7c3c0;fill-opacity:1"
+         id="text12">dynamics, scaling, inductive bias</text>
+    </g>
+    <path
+       d="m 56.531483,552.25055 v 28 m 0,-14 h 66.999997 m 413,0 h 67 m 0,-14 v 28"
+       style="fill:none;stroke:#c7c3c0;stroke-width:3;stroke-opacity:1"
+       id="path12" />
+    <g
+       style="text-anchor:middle;fill:#c7c3c0;fill-opacity:1"
+       id="g14"
+       transform="translate(-16.468517,-38.749452)">
+      <text
+         x="947"
+         y="603"
+         style="font-weight:bold;font-size:33px;fill:#c7c3c0;fill-opacity:1"
+         id="text13">mechanistic interp.</text>
+      <text
+         x="947"
+         y="633"
+         style="font-size:24px;fill:#c7c3c0;fill-opacity:1"
+         id="text14">discovery, intervention, monitoring</text>
+    </g>
+    <path
+       d="m 658.53148,552.25055 v 28 m 0,-14 h 65 m 414.00002,0 h 66 m 0,-14 v 28"
+       style="fill:none;stroke:#c7c3c0;stroke-width:3;stroke-opacity:1"
+       id="path14" />
+  </g>
+</svg>
