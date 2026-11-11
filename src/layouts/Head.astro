@@ -79,8 +79,8 @@ const pageImage = postSlug
 <!-- Global View Transition -->
 <ClientRouter fallback="none" />
 
-<!-- Theme and reader preferences. ReaderControls.astro (and the OS listener
-     below) store them in localStorage ('theme': 'light' | 'dark', 'font':
+<!-- Theme and reader preferences. ThemeToggle.astro, WeightToggle.astro (and
+     the OS listener below) store them in localStorage ('theme': 'light' | 'dark', 'font':
      'heavy' | 'regular') and fire `theme-changed`; this script is the one place
      that applies them to <html>: before first paint, before each client-side
      swap, and on every `theme-changed`. -->
@@ -118,7 +118,7 @@ function initTheme(doc = document) {
   metaTheme?.setAttribute('content', isDark ? darkMode : lightMode)
 }
 
-// Font weight preference ("Heavy font" reader button)
+// Prose weight preference (WeightToggle.astro, the "Aa" in the post date line)
 function initFontPref(doc = document) {
   let heavy = false
   try {

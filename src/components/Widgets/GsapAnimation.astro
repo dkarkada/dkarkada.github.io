@@ -30,6 +30,7 @@ function setupPostPageAnimation() {
   const tocListChildren = tocList ? Array.from(tocList.children) : []
   const backButton = document.getElementById('back-button')
   const postDate = document.getElementById('gsap-post-date')
+  const weightToggle = document.getElementById('weight-toggle')
 
   const isLargeScreen = window.matchMedia('(min-width: 1024px)').matches
   const isSmallScreen = window.matchMedia('(max-width: 1535px)').matches
@@ -38,6 +39,7 @@ function setupPostPageAnimation() {
     animateIn(allElements.slice(0, 14), 0.2, 0.05)
     if (allElements.length > 14) animateIn(allElements.slice(14), 0.2 + 0.05 * 14)
     if (postDate) animateIn([postDate], 0.15)
+    if (weightToggle) animateIn([weightToggle], 0.15)
     if (tocIcon) animateIn([tocIcon], 0.25)
     if (tocListChildren.length > 0) animateIn(tocListChildren, 0.25, 0.025)
     if (backButton) animateIn([backButton], 0.2)

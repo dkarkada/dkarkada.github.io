@@ -1,0 +1,99 @@
+---
+// Color theme: "light / dark" in the footer, on every page. Both words are
+// always shown and the current one is marked (emphasis color + highlight
+// band), so the control reads as a state, not an instruction.
+//
+// A click stores the choice and fires `theme-changed` inside a 0.2s
+// crossfade; Head.astro applies it to <html>. The marking is CSS-switched on
+// html.dark, so it is right on first paint; the script only keeps aria-pressed
+// in sync for screen readers.
+---
+
+<p class="theme-toggle" role="group" aria-label="Color theme">
+  <button type="button" class="theme-choice" data-theme-choice="light">light</button>&nbsp;/&nbsp;<button type="button" class="theme-choice" data-theme-choice="dark">dark</button>
+</p>
+
+<script>
+function syncPressed() {
+  const dark = document.documentElement.classList.contains('dark')
+  document.querySelectorAll<HTMLElement>('[data-theme-choice]').forEach((b) => {
+    b.setAttribute('aria-pressed', String((b.dataset.themeChoice === 'dark') === dark))
+  })
+}
+
+// Bundled module script: runs once per full load; delegated listeners survive
+// client-side navigations. Head.astro's `theme-changed` listener is registered
+// first, so syncPressed sees the new class.
+document.addEventListener('click', (e) => {
+  const choice = (e.target as Element | null)?.closest<HTMLElement>('[data-theme-choice]')?.dataset.themeChoice
+  if (!choice || document.documentElement.classList.contains('dark') === (choice === 'dark'))
+    return
+  try {
+    localStorage.setItem('theme', choice)
+  }
+  catch {}
+  const apply = () => document.dispatchEvent(new Event('theme-changed'))
+  // 0.2s crossfade (transition.css); instant under reduced motion or without
+  // view-transition support (Head.astro sets .reduce-motion for both).
+  const html = document.documentElement
+  if (html.classList.contains('reduce-motion')) {
+    apply()
+    return
+  }
+  html.setAttribute('data-theme-changing', '')
+  document.startViewTransition(apply).finished.finally(() => html.removeAttribute('data-theme-changing'))
+})
+document.addEventListener('theme-changed', syncPressed)
+document.addEventListener('astro:page-load', syncPressed)
+</script>
+
+<style>
+.theme-toggle { color: oklch(var(--color-text-params) / 0.6); }
+
+/* Same marker band as the footer links */
+.theme-choice {
+  position: relative;
+  display: inline-block;
+  padding: 0.2rem 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: color 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+.theme-choice::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  z-index: -1;
+  height: 0.5em;
+  width: 100%;
+  background-color: var(--color-highlight);
+  bottom: 0.35em;
+  transform-origin: bottom right;
+  transform: scaleX(0);
+  transition: transform 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+@media (min-width: 1024px) {
+  .theme-choice::after { transition-duration: 300ms; }
+}
+.theme-choice:hover { color: var(--color-emphasis); }
+.theme-choice:hover::after {
+  transform-origin: bottom left;
+  transform: scaleX(1);
+}
+.theme-choice:focus-visible {
+  outline: 1px solid oklch(var(--color-text-params) / 0.6);
+  outline-offset: 2px;
+}
+
+/* Current theme: marked, and not a click target */
+:global(html.dark) .theme-choice[data-theme-choice='dark'],
+:global(html:not(.dark)) .theme-choice[data-theme-choice='light'] {
+  color: var(--color-emphasis);
+  cursor: default;
+}
+:global(html.dark) .theme-choice[data-theme-choice='dark']::after,
+:global(html:not(.dark)) .theme-choice[data-theme-choice='light']::after {
+  transform: scaleX(1);
+}
+</style>

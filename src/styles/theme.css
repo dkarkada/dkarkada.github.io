@@ -54,8 +54,8 @@ img, video { max-width: 100%; height: auto; }
 /* Light mode on :root; html.dark (the default, see Head.astro) overrides only
    what differs. Colors are OKLCH. Each palette color has a `-params` form
    (bare "L C H") for opacity variants: oklch(var(--color-X-params) / alpha).
-   Reader preferences (ReaderControls.astro) are html classes: `dark` and
-   `heavy-font`. */
+   Reader preferences are html classes: `dark` (ThemeToggle.astro) and
+   `heavy-font` (WeightToggle.astro). */
 :root {
   /* Parchment ground, deep-blue ink */
   --color-background-params: 0.88 0.03 85;

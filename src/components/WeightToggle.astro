@@ -1,0 +1,56 @@
+---
+// Prose weight: an "Aa" in the post's date line, set in the prose face at the
+// current --prose-weight, so the glyph shows the setting it controls. A click
+// toggles html.heavy-font (via localStorage + `theme-changed`; Head.astro
+// applies it), which re-weights the glyph along with the body text.
+---
+
+<button
+  type="button"
+  id="weight-toggle"
+  class="weight-toggle"
+  aria-label="Heavier text"
+  title="Text weight"
+>Aa</button>
+
+<script>
+function syncPressed() {
+  const heavy = document.documentElement.classList.contains('heavy-font')
+  document.getElementById('weight-toggle')?.setAttribute('aria-pressed', String(heavy))
+}
+
+// Bundled module script: runs once per full load; delegated listeners survive
+// client-side navigations. Head.astro's `theme-changed` listener is registered
+// first, so syncPressed sees the new class.
+document.addEventListener('click', (e) => {
+  if (!(e.target as Element | null)?.closest('#weight-toggle'))
+    return
+  const heavy = document.documentElement.classList.contains('heavy-font')
+  try {
+    localStorage.setItem('font', heavy ? 'regular' : 'heavy')
+  }
+  catch {}
+  document.dispatchEvent(new Event('theme-changed'))
+})
+document.addEventListener('theme-changed', syncPressed)
+document.addEventListener('astro:page-load', syncPressed)
+</script>
+
+<style>
+.weight-toggle {
+  font-family: var(--font-serif);
+  font-style: normal;
+  font-weight: var(--prose-weight);
+  font-size: 1.05em;
+  line-height: 1;
+  padding: 0.15em 0.2em;
+  color: oklch(var(--color-text-params) / 0.6);
+  cursor: pointer;
+  transition: color 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+.weight-toggle:hover { color: var(--color-emphasis); }
+.weight-toggle:focus-visible {
+  outline: 1px solid oklch(var(--color-text-params) / 0.6);
+  outline-offset: 2px;
+}
+</style>
