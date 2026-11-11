@@ -26,7 +26,6 @@
     "@astrojs/sitemap": "^3.4.1",
     "astro": "^5.9.3",
     "astro-compress": "^2.3.8",
-    "astro-og-canvas": "^0.7.0",
     "astro-robots-txt": "^1.0.0",
     "canvaskit-wasm": "^0.42.0",
     "feed": "^5.1.0",
