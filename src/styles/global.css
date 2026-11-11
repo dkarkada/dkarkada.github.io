@@ -23,12 +23,25 @@ body::selection {
    layers are averaged into one mean-0.5 field and blended `overlay` once, so
    the shimmer never shifts the ground's mean color on either ground: on the
    dark ground it brightens and darkens the night blue, on the light ground
-   the parchment. Strength: --grain-contrast (theme.css). */
-#grain-shimmer {
+   the parchment. Strength: --grain-contrast (theme.css).
+
+   The grain blends onto its own opaque ground (#grain-ground, the page color)
+   rather than onto the html background. On iOS, rubber-band overscroll moves
+   the document but not this fixed layer, and the exposed strip is painted
+   outside the page's layer; with nothing beneath to blend with there, the
+   overlay showed as bare grey noise. A self-contained ground keeps the strip
+   the same colored grain as the page. */
+#grain-ground {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  isolation: isolate;
+  background-color: var(--color-background);
+}
+#grain-shimmer {
+  position: absolute;
+  inset: 0;
   isolation: isolate;
   mix-blend-mode: overlay;
 }

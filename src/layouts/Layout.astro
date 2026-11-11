@@ -50,7 +50,7 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
 >
   <Head {postTitle} {postDescription} {postSlug} />
   <body>
-    <div id="grain-shimmer" transition:persist="grain-shimmer" aria-hidden="true"></div>
+    <div id="grain-ground" transition:persist="grain-shimmer" aria-hidden="true"><div id="grain-shimmer"></div></div>
     <div class="page-wrapper">
       {showTOCSidebar
         ? <div class="toc-sidebar-wrapper"><TOC headings={headings ?? []} sidebar={true} /></div>
@@ -96,7 +96,7 @@ const showTOCSidebar = isPost && !isAnimPost && !isAbout
   // Cost notes: the fractalNoise filter is rasterised ONCE — all 12 layers
   // share the same data-URI (the browser decodes it a single time) and merely
   // sample it at 12 well-separated `background-position` offsets, which read as
-  // 12 decorrelated fields. `#grain-shimmer` is transition:persist'd; the
+  // 12 decorrelated fields. `#grain-ground` is transition:persist'd; the
   // script is deduped across client-side navigations, so the build + rAF loop
   // are re-attached on every `astro:page-load` — keeping the persisted layers
   // if they survived, rebuilding them if not.
